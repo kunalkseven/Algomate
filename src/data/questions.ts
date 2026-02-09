@@ -1,0 +1,637 @@
+import { Question, Topic, Difficulty } from '@/types';
+
+export const TOPICS: Topic[] = [
+    'Arrays',
+    'Strings',
+    'Linked Lists',
+    'Stacks',
+    'Queues',
+    'Trees',
+    'Binary Search Trees',
+    'Heaps',
+    'Graphs',
+    'Dynamic Programming',
+    'Greedy',
+    'Backtracking',
+    'Bit Manipulation',
+    'Math',
+    'Sorting',
+    'Searching',
+    'Hashing',
+    'Two Pointers',
+    'Sliding Window',
+    'Recursion',
+];
+
+export const DIFFICULTY_COLORS: Record<Difficulty, string> = {
+    Easy: 'badge-easy',
+    Medium: 'badge-medium',
+    Hard: 'badge-hard',
+};
+
+export const questions: Question[] = [
+    // Arrays
+    {
+        id: '1',
+        title: 'Two Sum',
+        slug: 'two-sum',
+        difficulty: 'Easy',
+        topics: ['Arrays', 'Hashing'],
+        description: 'Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target. You may assume that each input would have exactly one solution, and you may not use the same element twice.',
+        examples: [
+            { input: 'nums = [2,7,11,15], target = 9', output: '[0,1]', explanation: 'Because nums[0] + nums[1] == 9, we return [0, 1].' },
+            { input: 'nums = [3,2,4], target = 6', output: '[1,2]' },
+        ],
+        constraints: ['2 <= nums.length <= 10^4', '-10^9 <= nums[i] <= 10^9', '-10^9 <= target <= 10^9'],
+        hints: ['Use a hash map to store complement values', 'One pass solution is possible'],
+        starterCode: {
+            javascript: 'function twoSum(nums, target) {\n  // Your code here\n}',
+            python: 'def twoSum(nums, target):\n    # Your code here\n    pass',
+            java: 'class Solution {\n    public int[] twoSum(int[] nums, int target) {\n        // Your code here\n    }\n}',
+            cpp: 'class Solution {\npublic:\n    vector<int> twoSum(vector<int>& nums, int target) {\n        // Your code here\n    }\n};',
+        },
+        companies: ['Google', 'Amazon', 'Facebook', 'Apple', 'Microsoft'],
+        acceptance: 49.2,
+        likes: 45000,
+    },
+    {
+        id: '2',
+        title: 'Best Time to Buy and Sell Stock',
+        slug: 'best-time-to-buy-and-sell-stock',
+        difficulty: 'Easy',
+        topics: ['Arrays', 'Dynamic Programming'],
+        description: 'You are given an array prices where prices[i] is the price of a given stock on the ith day. You want to maximize your profit by choosing a single day to buy one stock and choosing a different day in the future to sell that stock.',
+        examples: [
+            { input: 'prices = [7,1,5,3,6,4]', output: '5', explanation: 'Buy on day 2 (price = 1) and sell on day 5 (price = 6), profit = 6-1 = 5.' },
+        ],
+        constraints: ['1 <= prices.length <= 10^5', '0 <= prices[i] <= 10^4'],
+        hints: ['Track the minimum price seen so far', 'Calculate max profit at each step'],
+        starterCode: {
+            javascript: 'function maxProfit(prices) {\n  // Your code here\n}',
+            python: 'def maxProfit(prices):\n    # Your code here\n    pass',
+            java: 'class Solution {\n    public int maxProfit(int[] prices) {\n        // Your code here\n    }\n}',
+            cpp: 'class Solution {\npublic:\n    int maxProfit(vector<int>& prices) {\n        // Your code here\n    }\n};',
+        },
+        companies: ['Amazon', 'Facebook', 'Microsoft'],
+        acceptance: 54.1,
+        likes: 25000,
+    },
+    {
+        id: '3',
+        title: 'Contains Duplicate',
+        slug: 'contains-duplicate',
+        difficulty: 'Easy',
+        topics: ['Arrays', 'Hashing'],
+        description: 'Given an integer array nums, return true if any value appears at least twice in the array, and return false if every element is distinct.',
+        examples: [
+            { input: 'nums = [1,2,3,1]', output: 'true' },
+            { input: 'nums = [1,2,3,4]', output: 'false' },
+        ],
+        constraints: ['1 <= nums.length <= 10^5', '-10^9 <= nums[i] <= 10^9'],
+        hints: ['Use a Set data structure', 'Compare set size with array length'],
+        starterCode: {
+            javascript: 'function containsDuplicate(nums) {\n  // Your code here\n}',
+            python: 'def containsDuplicate(nums):\n    # Your code here\n    pass',
+            java: 'class Solution {\n    public boolean containsDuplicate(int[] nums) {\n        // Your code here\n    }\n}',
+            cpp: 'class Solution {\npublic:\n    bool containsDuplicate(vector<int>& nums) {\n        // Your code here\n    }\n};',
+        },
+        companies: ['Apple', 'Adobe'],
+        acceptance: 61.2,
+        likes: 8500,
+    },
+    {
+        id: '4',
+        title: 'Product of Array Except Self',
+        slug: 'product-of-array-except-self',
+        difficulty: 'Medium',
+        topics: ['Arrays'],
+        description: 'Given an integer array nums, return an array answer such that answer[i] is equal to the product of all the elements of nums except nums[i]. You must write an algorithm that runs in O(n) time without using the division operation.',
+        examples: [
+            { input: 'nums = [1,2,3,4]', output: '[24,12,8,6]' },
+            { input: 'nums = [-1,1,0,-3,3]', output: '[0,0,9,0,0]' },
+        ],
+        constraints: ['2 <= nums.length <= 10^5', '-30 <= nums[i] <= 30'],
+        hints: ['Use prefix and suffix products', 'Can be done in O(1) extra space'],
+        starterCode: {
+            javascript: 'function productExceptSelf(nums) {\n  // Your code here\n}',
+            python: 'def productExceptSelf(nums):\n    # Your code here\n    pass',
+            java: 'class Solution {\n    public int[] productExceptSelf(int[] nums) {\n        // Your code here\n    }\n}',
+            cpp: 'class Solution {\npublic:\n    vector<int> productExceptSelf(vector<int>& nums) {\n        // Your code here\n    }\n};',
+        },
+        companies: ['Amazon', 'Apple', 'Facebook'],
+        acceptance: 65.8,
+        likes: 18000,
+    },
+    {
+        id: '5',
+        title: 'Maximum Subarray',
+        slug: 'maximum-subarray',
+        difficulty: 'Medium',
+        topics: ['Arrays', 'Dynamic Programming'],
+        description: 'Given an integer array nums, find the subarray with the largest sum, and return its sum.',
+        examples: [
+            { input: 'nums = [-2,1,-3,4,-1,2,1,-5,4]', output: '6', explanation: 'The subarray [4,-1,2,1] has the largest sum 6.' },
+        ],
+        constraints: ['1 <= nums.length <= 10^5', '-10^4 <= nums[i] <= 10^4'],
+        hints: ['Kadane\'s Algorithm', 'Track current sum and max sum'],
+        starterCode: {
+            javascript: 'function maxSubArray(nums) {\n  // Your code here\n}',
+            python: 'def maxSubArray(nums):\n    # Your code here\n    pass',
+            java: 'class Solution {\n    public int maxSubArray(int[] nums) {\n        // Your code here\n    }\n}',
+            cpp: 'class Solution {\npublic:\n    int maxSubArray(vector<int>& nums) {\n        // Your code here\n    }\n};',
+        },
+        companies: ['LinkedIn', 'Apple', 'Microsoft'],
+        acceptance: 50.2,
+        likes: 32000,
+    },
+    // Strings
+    {
+        id: '6',
+        title: 'Valid Anagram',
+        slug: 'valid-anagram',
+        difficulty: 'Easy',
+        topics: ['Strings', 'Hashing'],
+        description: 'Given two strings s and t, return true if t is an anagram of s, and false otherwise.',
+        examples: [
+            { input: 's = "anagram", t = "nagaram"', output: 'true' },
+            { input: 's = "rat", t = "car"', output: 'false' },
+        ],
+        constraints: ['1 <= s.length, t.length <= 5 * 10^4', 's and t consist of lowercase English letters'],
+        hints: ['Count character frequencies', 'Compare the counts'],
+        starterCode: {
+            javascript: 'function isAnagram(s, t) {\n  // Your code here\n}',
+            python: 'def isAnagram(s, t):\n    # Your code here\n    pass',
+            java: 'class Solution {\n    public boolean isAnagram(String s, String t) {\n        // Your code here\n    }\n}',
+            cpp: 'class Solution {\npublic:\n    bool isAnagram(string s, string t) {\n        // Your code here\n    }\n};',
+        },
+        companies: ['Amazon', 'Microsoft'],
+        acceptance: 62.8,
+        likes: 9200,
+    },
+    {
+        id: '7',
+        title: 'Longest Substring Without Repeating Characters',
+        slug: 'longest-substring-without-repeating-characters',
+        difficulty: 'Medium',
+        topics: ['Strings', 'Sliding Window', 'Hashing'],
+        description: 'Given a string s, find the length of the longest substring without repeating characters.',
+        examples: [
+            { input: 's = "abcabcbb"', output: '3', explanation: 'The answer is "abc", with the length of 3.' },
+            { input: 's = "bbbbb"', output: '1', explanation: 'The answer is "b", with the length of 1.' },
+        ],
+        constraints: ['0 <= s.length <= 5 * 10^4', 's consists of English letters, digits, symbols and spaces'],
+        hints: ['Use sliding window technique', 'Track character positions with a map'],
+        starterCode: {
+            javascript: 'function lengthOfLongestSubstring(s) {\n  // Your code here\n}',
+            python: 'def lengthOfLongestSubstring(s):\n    # Your code here\n    pass',
+            java: 'class Solution {\n    public int lengthOfLongestSubstring(String s) {\n        // Your code here\n    }\n}',
+            cpp: 'class Solution {\npublic:\n    int lengthOfLongestSubstring(string s) {\n        // Your code here\n    }\n};',
+        },
+        companies: ['Amazon', 'Facebook', 'Google', 'Microsoft'],
+        acceptance: 34.5,
+        likes: 35000,
+    },
+    // Linked Lists
+    {
+        id: '8',
+        title: 'Reverse Linked List',
+        slug: 'reverse-linked-list',
+        difficulty: 'Easy',
+        topics: ['Linked Lists', 'Recursion'],
+        description: 'Given the head of a singly linked list, reverse the list, and return the reversed list.',
+        examples: [
+            { input: 'head = [1,2,3,4,5]', output: '[5,4,3,2,1]' },
+        ],
+        constraints: ['The number of nodes in the list is the range [0, 5000]', '-5000 <= Node.val <= 5000'],
+        hints: ['Use three pointers: prev, current, next', 'Can be solved iteratively or recursively'],
+        starterCode: {
+            javascript: 'function reverseList(head) {\n  // Your code here\n}',
+            python: 'def reverseList(head):\n    # Your code here\n    pass',
+            java: 'class Solution {\n    public ListNode reverseList(ListNode head) {\n        // Your code here\n    }\n}',
+            cpp: 'class Solution {\npublic:\n    ListNode* reverseList(ListNode* head) {\n        // Your code here\n    }\n};',
+        },
+        companies: ['Amazon', 'Microsoft', 'Apple'],
+        acceptance: 73.4,
+        likes: 18500,
+    },
+    {
+        id: '9',
+        title: 'Merge Two Sorted Lists',
+        slug: 'merge-two-sorted-lists',
+        difficulty: 'Easy',
+        topics: ['Linked Lists', 'Recursion'],
+        description: 'You are given the heads of two sorted linked lists list1 and list2. Merge the two lists into one sorted list.',
+        examples: [
+            { input: 'list1 = [1,2,4], list2 = [1,3,4]', output: '[1,1,2,3,4,4]' },
+        ],
+        constraints: ['The number of nodes in both lists is in the range [0, 50]', '-100 <= Node.val <= 100'],
+        hints: ['Use a dummy head', 'Compare and link nodes one by one'],
+        starterCode: {
+            javascript: 'function mergeTwoLists(list1, list2) {\n  // Your code here\n}',
+            python: 'def mergeTwoLists(list1, list2):\n    # Your code here\n    pass',
+            java: 'class Solution {\n    public ListNode mergeTwoLists(ListNode list1, ListNode list2) {\n        // Your code here\n    }\n}',
+            cpp: 'class Solution {\npublic:\n    ListNode* mergeTwoLists(ListNode* list1, ListNode* list2) {\n        // Your code here\n    }\n};',
+        },
+        companies: ['Amazon', 'Apple', 'Microsoft'],
+        acceptance: 62.3,
+        likes: 19000,
+    },
+    {
+        id: '10',
+        title: 'Linked List Cycle',
+        slug: 'linked-list-cycle',
+        difficulty: 'Easy',
+        topics: ['Linked Lists', 'Two Pointers'],
+        description: 'Given head, the head of a linked list, determine if the linked list has a cycle in it.',
+        examples: [
+            { input: 'head = [3,2,0,-4], pos = 1', output: 'true', explanation: 'There is a cycle in the linked list, where the tail connects to the 1st node.' },
+        ],
+        constraints: ['The number of nodes in the list is in the range [0, 10^4]', '-10^5 <= Node.val <= 10^5'],
+        hints: ['Use Floyd\'s Cycle Detection (slow and fast pointers)', 'Slow moves 1 step, fast moves 2 steps'],
+        starterCode: {
+            javascript: 'function hasCycle(head) {\n  // Your code here\n}',
+            python: 'def hasCycle(head):\n    # Your code here\n    pass',
+            java: 'class Solution {\n    public boolean hasCycle(ListNode head) {\n        // Your code here\n    }\n}',
+            cpp: 'class Solution {\npublic:\n    bool hasCycle(ListNode *head) {\n        // Your code here\n    }\n};',
+        },
+        companies: ['Amazon', 'Microsoft'],
+        acceptance: 47.8,
+        likes: 14000,
+    },
+    // Trees
+    {
+        id: '11',
+        title: 'Maximum Depth of Binary Tree',
+        slug: 'maximum-depth-of-binary-tree',
+        difficulty: 'Easy',
+        topics: ['Trees', 'Recursion'],
+        description: 'Given the root of a binary tree, return its maximum depth. A binary tree\'s maximum depth is the number of nodes along the longest path from the root node down to the farthest leaf node.',
+        examples: [
+            { input: 'root = [3,9,20,null,null,15,7]', output: '3' },
+        ],
+        constraints: ['The number of nodes in the tree is in the range [0, 10^4]', '-100 <= Node.val <= 100'],
+        hints: ['Use recursion: 1 + max(left depth, right depth)', 'BFS can also be used'],
+        starterCode: {
+            javascript: 'function maxDepth(root) {\n  // Your code here\n}',
+            python: 'def maxDepth(root):\n    # Your code here\n    pass',
+            java: 'class Solution {\n    public int maxDepth(TreeNode root) {\n        // Your code here\n    }\n}',
+            cpp: 'class Solution {\npublic:\n    int maxDepth(TreeNode* root) {\n        // Your code here\n    }\n};',
+        },
+        companies: ['Amazon', 'Apple', 'LinkedIn'],
+        acceptance: 74.2,
+        likes: 12000,
+    },
+    {
+        id: '12',
+        title: 'Invert Binary Tree',
+        slug: 'invert-binary-tree',
+        difficulty: 'Easy',
+        topics: ['Trees', 'Recursion'],
+        description: 'Given the root of a binary tree, invert the tree, and return its root.',
+        examples: [
+            { input: 'root = [4,2,7,1,3,6,9]', output: '[4,7,2,9,6,3,1]' },
+        ],
+        constraints: ['The number of nodes in the tree is in the range [0, 100]', '-100 <= Node.val <= 100'],
+        hints: ['Swap left and right children recursively', 'Base case: node is null'],
+        starterCode: {
+            javascript: 'function invertTree(root) {\n  // Your code here\n}',
+            python: 'def invertTree(root):\n    # Your code here\n    pass',
+            java: 'class Solution {\n    public TreeNode invertTree(TreeNode root) {\n        // Your code here\n    }\n}',
+            cpp: 'class Solution {\npublic:\n    TreeNode* invertTree(TreeNode* root) {\n        // Your code here\n    }\n};',
+        },
+        companies: ['Google', 'Amazon'],
+        acceptance: 75.5,
+        likes: 14500,
+    },
+    // Binary Search
+    {
+        id: '13',
+        title: 'Binary Search',
+        slug: 'binary-search',
+        difficulty: 'Easy',
+        topics: ['Arrays', 'Searching'],
+        description: 'Given an array of integers nums which is sorted in ascending order, and an integer target, write a function to search target in nums. If target exists, then return its index. Otherwise, return -1.',
+        examples: [
+            { input: 'nums = [-1,0,3,5,9,12], target = 9', output: '4' },
+            { input: 'nums = [-1,0,3,5,9,12], target = 2', output: '-1' },
+        ],
+        constraints: ['1 <= nums.length <= 10^4', '-10^4 < nums[i], target < 10^4'],
+        hints: ['Use left and right pointers', 'Calculate mid without overflow'],
+        starterCode: {
+            javascript: 'function search(nums, target) {\n  // Your code here\n}',
+            python: 'def search(nums, target):\n    # Your code here\n    pass',
+            java: 'class Solution {\n    public int search(int[] nums, int target) {\n        // Your code here\n    }\n}',
+            cpp: 'class Solution {\npublic:\n    int search(vector<int>& nums, int target) {\n        // Your code here\n    }\n};',
+        },
+        companies: ['Amazon', 'Microsoft', 'Apple'],
+        acceptance: 56.8,
+        likes: 10000,
+    },
+    // Dynamic Programming
+    {
+        id: '14',
+        title: 'Climbing Stairs',
+        slug: 'climbing-stairs',
+        difficulty: 'Easy',
+        topics: ['Dynamic Programming', 'Math'],
+        description: 'You are climbing a staircase. It takes n steps to reach the top. Each time you can either climb 1 or 2 steps. In how many distinct ways can you climb to the top?',
+        examples: [
+            { input: 'n = 2', output: '2', explanation: 'There are two ways: (1+1) or (2)' },
+            { input: 'n = 3', output: '3', explanation: 'There are three ways: (1+1+1), (1+2), (2+1)' },
+        ],
+        constraints: ['1 <= n <= 45'],
+        hints: ['This is a Fibonacci sequence pattern', 'dp[i] = dp[i-1] + dp[i-2]'],
+        starterCode: {
+            javascript: 'function climbStairs(n) {\n  // Your code here\n}',
+            python: 'def climbStairs(n):\n    # Your code here\n    pass',
+            java: 'class Solution {\n    public int climbStairs(int n) {\n        // Your code here\n    }\n}',
+            cpp: 'class Solution {\npublic:\n    int climbStairs(int n) {\n        // Your code here\n    }\n};',
+        },
+        companies: ['Amazon', 'Apple', 'Adobe'],
+        acceptance: 52.1,
+        likes: 18000,
+    },
+    {
+        id: '15',
+        title: 'House Robber',
+        slug: 'house-robber',
+        difficulty: 'Medium',
+        topics: ['Dynamic Programming', 'Arrays'],
+        description: 'You are a professional robber planning to rob houses along a street. Each house has a certain amount of money stashed. You cannot rob two adjacent houses. Given an integer array nums representing the amount of money of each house, return the maximum amount of money you can rob tonight.',
+        examples: [
+            { input: 'nums = [1,2,3,1]', output: '4', explanation: 'Rob house 1 (money = 1) and then rob house 3 (money = 3). Total = 1 + 3 = 4.' },
+        ],
+        constraints: ['1 <= nums.length <= 100', '0 <= nums[i] <= 400'],
+        hints: ['dp[i] = max(dp[i-1], dp[i-2] + nums[i])', 'Can optimize to O(1) space'],
+        starterCode: {
+            javascript: 'function rob(nums) {\n  // Your code here\n}',
+            python: 'def rob(nums):\n    # Your code here\n    pass',
+            java: 'class Solution {\n    public int rob(int[] nums) {\n        // Your code here\n    }\n}',
+            cpp: 'class Solution {\npublic:\n    int rob(vector<int>& nums) {\n        // Your code here\n    }\n};',
+        },
+        companies: ['Amazon', 'Cisco', 'Google'],
+        acceptance: 49.8,
+        likes: 19000,
+    },
+    {
+        id: '16',
+        title: 'Coin Change',
+        slug: 'coin-change',
+        difficulty: 'Medium',
+        topics: ['Dynamic Programming'],
+        description: 'You are given an integer array coins representing coins of different denominations and an integer amount representing a total amount of money. Return the fewest number of coins that you need to make up that amount. If that amount of money cannot be made up by any combination of the coins, return -1.',
+        examples: [
+            { input: 'coins = [1,2,5], amount = 11', output: '3', explanation: '11 = 5 + 5 + 1' },
+        ],
+        constraints: ['1 <= coins.length <= 12', '1 <= coins[i] <= 2^31 - 1', '0 <= amount <= 10^4'],
+        hints: ['Use bottom-up DP', 'dp[i] = min(dp[i], dp[i-coin] + 1) for each coin'],
+        starterCode: {
+            javascript: 'function coinChange(coins, amount) {\n  // Your code here\n}',
+            python: 'def coinChange(coins, amount):\n    # Your code here\n    pass',
+            java: 'class Solution {\n    public int coinChange(int[] coins, int amount) {\n        // Your code here\n    }\n}',
+            cpp: 'class Solution {\npublic:\n    int coinChange(vector<int>& coins, int amount) {\n        // Your code here\n    }\n};',
+        },
+        companies: ['Amazon', 'Microsoft', 'Goldman Sachs'],
+        acceptance: 42.5,
+        likes: 17000,
+    },
+    // Graphs
+    {
+        id: '17',
+        title: 'Number of Islands',
+        slug: 'number-of-islands',
+        difficulty: 'Medium',
+        topics: ['Graphs', 'Arrays'],
+        description: 'Given an m x n 2D binary grid grid which represents a map of \'1\'s (land) and \'0\'s (water), return the number of islands.',
+        examples: [
+            { input: 'grid = [["1","1","0"],["1","1","0"],["0","0","1"]]', output: '2' },
+        ],
+        constraints: ['m == grid.length', 'n == grid[i].length', '1 <= m, n <= 300'],
+        hints: ['Use DFS or BFS', 'Mark visited cells to avoid counting twice'],
+        starterCode: {
+            javascript: 'function numIslands(grid) {\n  // Your code here\n}',
+            python: 'def numIslands(grid):\n    # Your code here\n    pass',
+            java: 'class Solution {\n    public int numIslands(char[][] grid) {\n        // Your code here\n    }\n}',
+            cpp: 'class Solution {\npublic:\n    int numIslands(vector<vector<char>>& grid) {\n        // Your code here\n    }\n};',
+        },
+        companies: ['Amazon', 'Microsoft', 'Google', 'Facebook'],
+        acceptance: 56.2,
+        likes: 22000,
+    },
+    {
+        id: '18',
+        title: 'Clone Graph',
+        slug: 'clone-graph',
+        difficulty: 'Medium',
+        topics: ['Graphs', 'Hashing'],
+        description: 'Given a reference of a node in a connected undirected graph, return a deep copy (clone) of the graph.',
+        examples: [
+            { input: 'adjList = [[2,4],[1,3],[2,4],[1,3]]', output: '[[2,4],[1,3],[2,4],[1,3]]' },
+        ],
+        constraints: ['The number of nodes in the graph is in the range [0, 100]', '1 <= Node.val <= 100'],
+        hints: ['Use a hash map to track cloned nodes', 'BFS or DFS traversal'],
+        starterCode: {
+            javascript: 'function cloneGraph(node) {\n  // Your code here\n}',
+            python: 'def cloneGraph(node):\n    # Your code here\n    pass',
+            java: 'class Solution {\n    public Node cloneGraph(Node node) {\n        // Your code here\n    }\n}',
+            cpp: 'class Solution {\npublic:\n    Node* cloneGraph(Node* node) {\n        // Your code here\n    }\n};',
+        },
+        companies: ['Facebook', 'Amazon', 'Google'],
+        acceptance: 52.4,
+        likes: 9500,
+    },
+    // Stacks
+    {
+        id: '19',
+        title: 'Valid Parentheses',
+        slug: 'valid-parentheses',
+        difficulty: 'Easy',
+        topics: ['Stacks', 'Strings'],
+        description: 'Given a string s containing just the characters \'(\', \')\', \'{\', \'}\', \'[\' and \']\', determine if the input string is valid.',
+        examples: [
+            { input: 's = "()"', output: 'true' },
+            { input: 's = "()[]{}"', output: 'true' },
+            { input: 's = "(]"', output: 'false' },
+        ],
+        constraints: ['1 <= s.length <= 10^4', 's consists of parentheses only'],
+        hints: ['Use a stack to track opening brackets', 'Match closing brackets with stack top'],
+        starterCode: {
+            javascript: 'function isValid(s) {\n  // Your code here\n}',
+            python: 'def isValid(s):\n    # Your code here\n    pass',
+            java: 'class Solution {\n    public boolean isValid(String s) {\n        // Your code here\n    }\n}',
+            cpp: 'class Solution {\npublic:\n    bool isValid(string s) {\n        // Your code here\n    }\n};',
+        },
+        companies: ['Amazon', 'Facebook', 'Google'],
+        acceptance: 40.5,
+        likes: 21000,
+    },
+    {
+        id: '20',
+        title: 'Min Stack',
+        slug: 'min-stack',
+        difficulty: 'Medium',
+        topics: ['Stacks'],
+        description: 'Design a stack that supports push, pop, top, and retrieving the minimum element in constant time.',
+        examples: [
+            { input: '["MinStack","push","push","push","getMin","pop","top","getMin"]\n[[],[-2],[0],[-3],[],[],[],[]]', output: '[null,null,null,null,-3,null,0,-2]' },
+        ],
+        constraints: ['-2^31 <= val <= 2^31 - 1', 'Methods pop, top and getMin will always be called on non-empty stacks'],
+        hints: ['Use two stacks: one for values, one for minimums', 'Or store pairs of (value, currentMin)'],
+        starterCode: {
+            javascript: 'class MinStack {\n  constructor() {\n    // Your code here\n  }\n  push(val) {}\n  pop() {}\n  top() {}\n  getMin() {}\n}',
+            python: 'class MinStack:\n    def __init__(self):\n        pass\n    def push(self, val):\n        pass\n    def pop(self):\n        pass\n    def top(self):\n        pass\n    def getMin(self):\n        pass',
+            java: 'class MinStack {\n    public MinStack() {}\n    public void push(int val) {}\n    public void pop() {}\n    public int top() {}\n    public int getMin() {}\n}',
+            cpp: 'class MinStack {\npublic:\n    MinStack() {}\n    void push(int val) {}\n    void pop() {}\n    int top() {}\n    int getMin() {}\n};',
+        },
+        companies: ['Amazon', 'Bloomberg', 'Microsoft'],
+        acceptance: 52.8,
+        likes: 13000,
+    },
+    // Hard Problems
+    {
+        id: '21',
+        title: 'Median of Two Sorted Arrays',
+        slug: 'median-of-two-sorted-arrays',
+        difficulty: 'Hard',
+        topics: ['Arrays', 'Searching'],
+        description: 'Given two sorted arrays nums1 and nums2 of size m and n respectively, return the median of the two sorted arrays. The overall run time complexity should be O(log (m+n)).',
+        examples: [
+            { input: 'nums1 = [1,3], nums2 = [2]', output: '2.0', explanation: 'merged array = [1,2,3] and median is 2.' },
+        ],
+        constraints: ['nums1.length == m', 'nums2.length == n', '0 <= m <= 1000', '0 <= n <= 1000'],
+        hints: ['Binary search on the smaller array', 'Find the correct partition point'],
+        starterCode: {
+            javascript: 'function findMedianSortedArrays(nums1, nums2) {\n  // Your code here\n}',
+            python: 'def findMedianSortedArrays(nums1, nums2):\n    # Your code here\n    pass',
+            java: 'class Solution {\n    public double findMedianSortedArrays(int[] nums1, int[] nums2) {\n        // Your code here\n    }\n}',
+            cpp: 'class Solution {\npublic:\n    double findMedianSortedArrays(vector<int>& nums1, vector<int>& nums2) {\n        // Your code here\n    }\n};',
+        },
+        companies: ['Amazon', 'Apple', 'Google', 'Goldman Sachs'],
+        acceptance: 36.8,
+        likes: 26000,
+    },
+    {
+        id: '22',
+        title: 'Trapping Rain Water',
+        slug: 'trapping-rain-water',
+        difficulty: 'Hard',
+        topics: ['Arrays', 'Two Pointers', 'Dynamic Programming'],
+        description: 'Given n non-negative integers representing an elevation map where the width of each bar is 1, compute how much water it can trap after raining.',
+        examples: [
+            { input: 'height = [0,1,0,2,1,0,1,3,2,1,2,1]', output: '6' },
+        ],
+        constraints: ['n == height.length', '1 <= n <= 2 * 10^4', '0 <= height[i] <= 10^5'],
+        hints: ['Water at index i = min(leftMax, rightMax) - height[i]', 'Two pointer approach for O(1) space'],
+        starterCode: {
+            javascript: 'function trap(height) {\n  // Your code here\n}',
+            python: 'def trap(height):\n    # Your code here\n    pass',
+            java: 'class Solution {\n    public int trap(int[] height) {\n        // Your code here\n    }\n}',
+            cpp: 'class Solution {\npublic:\n    int trap(vector<int>& height) {\n        // Your code here\n    }\n};',
+        },
+        companies: ['Amazon', 'Facebook', 'Goldman Sachs', 'Microsoft'],
+        acceptance: 59.5,
+        likes: 29000,
+    },
+    {
+        id: '23',
+        title: 'Merge K Sorted Lists',
+        slug: 'merge-k-sorted-lists',
+        difficulty: 'Hard',
+        topics: ['Linked Lists', 'Heaps'],
+        description: 'You are given an array of k linked-lists lists, each linked-list is sorted in ascending order. Merge all the linked-lists into one sorted linked-list and return it.',
+        examples: [
+            { input: 'lists = [[1,4,5],[1,3,4],[2,6]]', output: '[1,1,2,3,4,4,5,6]' },
+        ],
+        constraints: ['k == lists.length', '0 <= k <= 10^4', '0 <= lists[i].length <= 500'],
+        hints: ['Use a min-heap to always get the smallest element', 'Divide and conquer approach also works'],
+        starterCode: {
+            javascript: 'function mergeKLists(lists) {\n  // Your code here\n}',
+            python: 'def mergeKLists(lists):\n    # Your code here\n    pass',
+            java: 'class Solution {\n    public ListNode mergeKLists(ListNode[] lists) {\n        // Your code here\n    }\n}',
+            cpp: 'class Solution {\npublic:\n    ListNode* mergeKLists(vector<ListNode*>& lists) {\n        // Your code here\n    }\n};',
+        },
+        companies: ['Amazon', 'Facebook', 'Microsoft', 'Google'],
+        acceptance: 50.2,
+        likes: 18000,
+    },
+    {
+        id: '24',
+        title: 'Word Search II',
+        slug: 'word-search-ii',
+        difficulty: 'Hard',
+        topics: ['Backtracking', 'Graphs'],
+        description: 'Given an m x n board of characters and a list of strings words, return all words on the board.',
+        examples: [
+            { input: 'board = [["o","a","a","n"],["e","t","a","e"],["i","h","k","r"],["i","f","l","v"]], words = ["oath","pea","eat","rain"]', output: '["eat","oath"]' },
+        ],
+        constraints: ['m == board.length', 'n == board[i].length', '1 <= m, n <= 12'],
+        hints: ['Use a Trie to store all words', 'DFS with backtracking from each cell'],
+        starterCode: {
+            javascript: 'function findWords(board, words) {\n  // Your code here\n}',
+            python: 'def findWords(board, words):\n    # Your code here\n    pass',
+            java: 'class Solution {\n    public List<String> findWords(char[][] board, String[] words) {\n        // Your code here\n    }\n}',
+            cpp: 'class Solution {\npublic:\n    vector<string> findWords(vector<vector<char>>& board, vector<string>& words) {\n        // Your code here\n    }\n};',
+        },
+        companies: ['Amazon', 'Microsoft', 'Apple'],
+        acceptance: 36.4,
+        likes: 9200,
+    },
+    {
+        id: '25',
+        title: 'Longest Increasing Path in a Matrix',
+        slug: 'longest-increasing-path-in-matrix',
+        difficulty: 'Hard',
+        topics: ['Graphs', 'Dynamic Programming'],
+        description: 'Given an m x n integers matrix, return the length of the longest increasing path in matrix.',
+        examples: [
+            { input: 'matrix = [[9,9,4],[6,6,8],[2,1,1]]', output: '4', explanation: 'The longest increasing path is [1, 2, 6, 9].' },
+        ],
+        constraints: ['m == matrix.length', 'n == matrix[i].length', '1 <= m, n <= 200'],
+        hints: ['Use DFS with memoization', 'The path must be strictly increasing'],
+        starterCode: {
+            javascript: 'function longestIncreasingPath(matrix) {\n  // Your code here\n}',
+            python: 'def longestIncreasingPath(matrix):\n    # Your code here\n    pass',
+            java: 'class Solution {\n    public int longestIncreasingPath(int[][] matrix) {\n        // Your code here\n    }\n}',
+            cpp: 'class Solution {\npublic:\n    int longestIncreasingPath(vector<vector<int>>& matrix) {\n        // Your code here\n    }\n};',
+        },
+        companies: ['Google', 'Amazon', 'Facebook'],
+        acceptance: 52.8,
+        likes: 8500,
+    },
+];
+
+export const getQuestionById = (id: string): Question | undefined => {
+    return questions.find(q => q.id === id);
+};
+
+export const getQuestionBySlug = (slug: string): Question | undefined => {
+    return questions.find(q => q.slug === slug);
+};
+
+export const getQuestionsByTopic = (topic: Topic): Question[] => {
+    return questions.filter(q => q.topics.includes(topic));
+};
+
+export const getQuestionsByDifficulty = (difficulty: Difficulty): Question[] => {
+    return questions.filter(q => q.difficulty === difficulty);
+};
+
+export const getRandomQuestion = (): Question => {
+    return questions[Math.floor(Math.random() * questions.length)];
+};
+
+export const getTopicStats = (): Record<Topic, { total: number; easy: number; medium: number; hard: number }> => {
+    const stats: Record<string, { total: number; easy: number; medium: number; hard: number }> = {};
+
+    TOPICS.forEach(topic => {
+        const topicQuestions = questions.filter(q => q.topics.includes(topic));
+        stats[topic] = {
+            total: topicQuestions.length,
+            easy: topicQuestions.filter(q => q.difficulty === 'Easy').length,
+            medium: topicQuestions.filter(q => q.difficulty === 'Medium').length,
+            hard: topicQuestions.filter(q => q.difficulty === 'Hard').length,
+        };
+    });
+
+    return stats as Record<Topic, { total: number; easy: number; medium: number; hard: number }>;
+};
