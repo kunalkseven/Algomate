@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { getQuestionBySlug, DIFFICULTY_COLORS } from '@/data/questions';
+import Editor from '@monaco-editor/react';
 import type { Language, QuestionProgress } from '@/types';
 
 // Icons
@@ -173,8 +174,8 @@ export default function QuestionPage() {
                                 key={tab}
                                 onClick={() => setActiveTab(tab)}
                                 className={`px-6 py-3 text-sm font-medium capitalize transition-colors ${activeTab === tab
-                                        ? 'text-primary-400 border-b-2 border-primary-400'
-                                        : 'text-dark-400 hover:text-white'
+                                    ? 'text-primary-400 border-b-2 border-primary-400'
+                                    : 'text-dark-400 hover:text-white'
                                     }`}
                             >
                                 {tab}
@@ -336,12 +337,23 @@ export default function QuestionPage() {
 
                     {/* Code Editor Area */}
                     <div className="flex-1 overflow-hidden">
-                        <textarea
+                        <Editor
+                            height="100%"
+                            defaultLanguage={language}
+                            language={language}
+                            theme="vs-dark"
                             value={code}
-                            onChange={(e) => setCode(e.target.value)}
-                            className="w-full h-full bg-dark-950 p-4 font-mono text-sm resize-none focus:outline-none"
-                            style={{ lineHeight: '1.6' }}
-                            spellCheck={false}
+                            onChange={(value) => setCode(value || '')}
+                            options={{
+                                minimap: { enabled: false },
+                                fontSize: 14,
+                                lineNumbers: 'on',
+                                roundedSelection: false,
+                                scrollBeyondLastLine: false,
+                                readOnly: false,
+                                automaticLayout: true,
+                                padding: { top: 16, bottom: 16 },
+                            }}
                         />
                     </div>
 
