@@ -2,8 +2,9 @@
 
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-import { questions, TOPICS, DIFFICULTY_COLORS } from '@/data/questions';
+import { TOPICS, DIFFICULTY_COLORS } from '@/data/questions';
 import type { Question, Difficulty, Topic, QuestionProgress } from '@/types';
+import { useQuestions, useProgress } from '@/hooks/useApi';
 
 // Icons
 const SearchIcon = () => (
@@ -246,56 +247,85 @@ export default function PracticePage() {
     const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty | 'All'>('All');
     const [selectedTopic, setSelectedTopic] = useState<Topic | 'All'>('All');
     const [selectedStatus, setSelectedStatus] = useState<'All' | 'Solved' | 'Attempted' | 'Unsolved'>('All');
-    const [progress, setProgress] = useState<Record<string, QuestionProgress>>({});
     const [showFilters, setShowFilters] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-    // Load progress from localStorage
-    useEffect(() => {
-        const saved = localStorage.getItem('algomate_progress');
-        if (saved) {
-            setProgress(JSON.parse(saved));
-        }
-    }, []);
+    // Fetch questions and progress from API
+    // Build filters object without undefined values
+    const filters: any = {};
+    if (selectedDifficulty !== 'All') filters.difficulty = selectedDifficulty;
+    if (selectedTopic !== 'All') filters.topic = selectedTopic;
+    if (selectedStatus !== 'All') filters.status = selectedStatus.toLowerCase();
+    if (search) filters.search = search;
 
-    // Handle bookmark
-    const handleBookmark = (id: string) => {
-        const newProgress = {
-            ...progress,
-            [id]: {
-                ...progress[id],
-                questionId: id,
-                bookmarked: !progress[id]?.bookmarked,
-                status: progress[id]?.status || 'unsolved',
-                attempts: progress[id]?.attempts || 0,
-                timeSpent: progress[id]?.timeSpent || 0,
-                confidence: progress[id]?.confidence || 1,
-                reviewCount: progress[id]?.reviewCount || 0,
-            },
-        };
-        setProgress(newProgress);
-        localStorage.setItem('algomate_progress', JSON.stringify(newProgress));
+    const { data: questionsData, loading: questionsLoading, error: questionsError } = useQuestions(
+        Object.keys(filters).length > 0 ? filters : undefined
+    );
+
+    const { data: progressData, updateProgress } = useProgress();
+
+    // Handle bookmark (now uses API)
+    const handleBookmark = async (id: string) => {
+        try {
+            const currentProgress = progressData?.progress?.find((p: any) => p.questionId === id);
+            const isBookmarked = currentProgress?.bookmarked || false;
+
+            await updateProgress(id, currentProgress?.status || 'unsolved', currentProgress?.confidence);
+            // Note: We'd need to add a bookmark-specific endpoint or include it in updateProgress
+            // For now, this is a placeholder
+        } catch (error) {
+            console.error('Failed to bookmark question:', error);
+        }
     };
 
-    // Filter questions
-    const filteredQuestions = questions.filter((q) => {
-        const matchesSearch = q.title.toLowerCase().includes(search.toLowerCase()) ||
-            q.topics.some(t => t.toLowerCase().includes(search.toLowerCase()));
-        const matchesDifficulty = selectedDifficulty === 'All' || q.difficulty === selectedDifficulty;
-        const matchesTopic = selectedTopic === 'All' || q.topics.includes(selectedTopic);
+    // Extract questions and stats
+    const displayQuestions = questionsData?.questions || [];
+    const progressMap = new Map(
+        (progressData?.progress || []).map((p: any) => [p.questionId, p])
+    );
 
-        let matchesStatus = true;
-        if (selectedStatus !== 'All') {
-            const status = progress[q.id]?.status || 'unsolved';
-            matchesStatus = selectedStatus.toLowerCase() === status;
-        }
-
-        return matchesSearch && matchesDifficulty && matchesTopic && matchesStatus;
-    });
+    // Filter by search locally (API doesn't support search yet)
+    const filteredQuestions = search
+        ? displayQuestions.filter((q: any) =>
+            q.title.toLowerCase().includes(search.toLowerCase()) ||
+            q.topics.some((t: string) => t.toLowerCase().includes(search.toLowerCase()))
+        )
+        : displayQuestions;
 
     // Stats
-    const totalSolved = Object.values(progress).filter(p => p.status === 'solved').length;
-    const totalAttempted = Object.values(progress).filter(p => p.status === 'attempted').length;
+    const totalSolved = (progressData?.progress || []).filter((p: any) => p.status === 'solved').length;
+    const totalAttempted = (progressData?.progress || []).filter((p: any) => p.status === 'attempted').length;
+
+    // Loading state
+    if (questionsLoading) {
+        return (
+            <div className="min-h-screen bg-dark-950 flex items-center justify-center">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
+                    <p className="text-dark-400">Loading problems...</p>
+                </div>
+            </div>
+        );
+    }
+
+    // Error state
+    if (questionsError) {
+        return (
+            <div className="min-h-screen bg-dark-950 flex items-center justify-center">
+                <div className="text-center max-w-md">
+                    <div className="text-red-500 text-5xl mb-4">⚠️</div>
+                    <h2 className="text-xl font-bold mb-2">Failed to load problems</h2>
+                    <p className="text-dark-400 mb-4">{questionsError}</p>
+                    <button
+                        onClick={() => window.location.reload()}
+                        className="px-4 py-2 bg-primary-500 rounded-lg hover:bg-primary-600 transition"
+                    >
+                        Retry
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-dark-950">
@@ -328,7 +358,7 @@ export default function PracticePage() {
                 {/* Stats */}
                 <div className="grid grid-cols-4 gap-4 mb-8">
                     <div className="glass rounded-xl p-4">
-                        <div className="text-2xl font-bold text-primary-400">{questions.length}</div>
+                        <div className="text-2xl font-bold text-primary-400">{displayQuestions.length}</div>
                         <div className="text-sm text-dark-400">Total Problems</div>
                     </div>
                     <div className="glass rounded-xl p-4">
@@ -340,7 +370,7 @@ export default function PracticePage() {
                         <div className="text-sm text-dark-400">Attempted</div>
                     </div>
                     <div className="glass rounded-xl p-4">
-                        <div className="text-2xl font-bold text-dark-300">{questions.length - totalSolved}</div>
+                        <div className="text-2xl font-bold text-dark-300">{displayQuestions.length - totalSolved}</div>
                         <div className="text-sm text-dark-400">Remaining</div>
                     </div>
                 </div>
@@ -348,7 +378,6 @@ export default function PracticePage() {
                 {/* Search and Filters */}
                 <div className="flex gap-4 mb-6">
                     <div className="flex-1 relative">
-                        <SearchIcon />
                         <input
                             type="text"
                             placeholder="Search problems by name or topic..."
@@ -431,11 +460,11 @@ export default function PracticePage() {
 
                 {/* Questions Grid */}
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {filteredQuestions.map((question) => (
+                    {filteredQuestions.map((question: any) => (
                         <QuestionCard
                             key={question.id}
                             question={question}
-                            progress={progress[question.id]}
+                            progress={progressMap.get(question.id)}
                             onBookmark={handleBookmark}
                         />
                     ))}

@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { questions } from '@/data/questions';
 import type { QuestionProgress } from '@/types';
 import SearchModal from '@/components/SearchModal';
+import { useStats } from '@/hooks/useApi';
 
 // Icons
 const HomeIcon = () => (
@@ -242,17 +243,13 @@ function ActivityHeatmap() {
 }
 
 export default function DashboardPage() {
-    const [progress, setProgress] = useState<Record<string, QuestionProgress>>({});
-    const [streak, setStreak] = useState(7);
     const [showSearch, setShowSearch] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-    useEffect(() => {
-        const saved = localStorage.getItem('algomate_progress');
-        if (saved) {
-            setProgress(JSON.parse(saved));
-        }
+    // Fetch stats from API
+    const { data: stats, loading, error } = useStats();
 
+    useEffect(() => {
         // Keyboard shortcut for search (Cmd/Ctrl + K)
         const handleKeyDown = (e: KeyboardEvent) => {
             if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
@@ -264,19 +261,24 @@ export default function DashboardPage() {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, []);
 
-    const totalSolved = Object.values(progress).filter(p => p.status === 'solved').length;
-    const easySolved = Object.values(progress).filter(p => p.status === 'solved').length; // Simplified
-    const mediumSolved = Math.floor(totalSolved * 0.4);
-    const hardSolved = Math.floor(totalSolved * 0.2);
+    // Extract stats from API response with fallback values
+    const totalSolved = stats?.totalSolved || 0;
+    const easySolved = stats?.difficultyProgress?.Easy?.solved || 0;
+    const mediumSolved = stats?.difficultyProgress?.Medium?.solved || 0;
+    const hardSolved = stats?.difficultyProgress?.Hard?.solved || 0;
+    const currentStreak = stats?.currentStreak || 0;
 
-    const topicsProgress = [
-        { name: 'Arrays', solved: 8, total: 12, color: 'bg-blue-500' },
-        { name: 'Strings', solved: 5, total: 8, color: 'bg-green-500' },
-        { name: 'Trees', solved: 3, total: 10, color: 'bg-purple-500' },
-        { name: 'DP', solved: 2, total: 15, color: 'bg-orange-500' },
-        { name: 'Graphs', solved: 1, total: 8, color: 'bg-pink-500' },
-    ];
+    // Convert topic progress from API format
+    const topicsProgress = stats?.topicProgress
+        ? Object.entries(stats.topicProgress).map(([name, data]: [string, any]) => ({
+            name,
+            solved: data.solved || 0,
+            total: data.total || 0,
+            color: getTopicColor(name)
+        }))
+        : [];
 
+    // Recent activity (placeholder - would need API endpoint)
     const recentActivity = [
         { date: 'Today', problems: ['Two Sum', 'Valid Parentheses'], count: 2 },
         { date: 'Yesterday', problems: ['Binary Search', 'Merge Two Sorted Lists'], count: 2 },
@@ -284,6 +286,52 @@ export default function DashboardPage() {
     ];
 
     const revisionDue = questions.slice(0, 3);
+
+    function getTopicColor(topic: string): string {
+        const colors: Record<string, string> = {
+            'Arrays': 'bg-blue-500',
+            'Strings': 'bg-green-500',
+            'Trees': 'bg-purple-500',
+            'DP': 'bg-orange-500',
+            'Dynamic Programming': 'bg-orange-500',
+            'Graphs': 'bg-pink-500',
+            'Linked Lists': 'bg-red-500',
+            'Stacks': 'bg-yellow-500',
+            'Queues': 'bg-indigo-500',
+        };
+        return colors[topic] || 'bg-gray-500';
+    }
+
+    // Loading state
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-dark-950 flex items-center justify-center">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
+                    <p className="text-dark-400">Loading your dashboard...</p>
+                </div>
+            </div>
+        );
+    }
+
+    // Error state
+    if (error) {
+        return (
+            <div className="min-h-screen bg-dark-950 flex items-center justify-center">
+                <div className="text-center max-w-md">
+                    <div className="text-red-500 text-5xl mb-4">⚠️</div>
+                    <h2 className="text-xl font-bold mb-2">Failed to load dashboard</h2>
+                    <p className="text-dark-400 mb-4">{error}</p>
+                    <button
+                        onClick={() => window.location.reload()}
+                        className="px-4 py-2 bg-primary-500 rounded-lg hover:bg-primary-600 transition"
+                    >
+                        Retry
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-dark-950">
@@ -331,7 +379,7 @@ export default function DashboardPage() {
                         </button>
                         <div className="flex items-center gap-2 px-3 lg:px-4 py-2 bg-orange-500/10 border border-orange-500/20 rounded-lg">
                             <span className="text-orange-400 streak-fire"><FireIcon /></span>
-                            <span className="font-semibold text-orange-400 text-sm lg:text-base">{streak} day streak</span>
+                            <span className="font-semibold text-orange-400 text-sm lg:text-base">{currentStreak} day streak</span>
                         </div>
                     </div>
                 </div>

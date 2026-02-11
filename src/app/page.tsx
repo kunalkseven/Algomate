@@ -113,12 +113,36 @@ const topics = [
     { name: 'Linked Lists', count: 15, color: 'bg-pink-500' },
 ];
 
+// Star component
+interface Star {
+    x: number;
+    y: number;
+    size: number;
+    opacity: number;
+    twinkleSpeed: number;
+}
+
 export default function LandingPage() {
     const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
     const [isClient, setIsClient] = useState(false);
+    const [stars, setStars] = useState<Star[]>([]);
 
     useEffect(() => {
         setIsClient(true);
+
+        // Generate stars
+        const generatedStars: Star[] = [];
+        for (let i = 0; i < 150; i++) {
+            generatedStars.push({
+                x: Math.random() * 100,
+                y: Math.random() * 100,
+                size: Math.random() * 2 + 0.5,
+                opacity: Math.random() * 0.7 + 0.3,
+                twinkleSpeed: Math.random() * 3 + 2,
+            });
+        }
+        setStars(generatedStars);
+
         const handleMouseMove = (e: MouseEvent) => {
             setMousePosition({ x: e.clientX, y: e.clientY });
         };
@@ -127,21 +151,42 @@ export default function LandingPage() {
     }, []);
 
     return (
-        <div className="min-h-screen bg-dark-950 overflow-hidden">
-            {/* Animated background */}
+        <div className="min-h-screen bg-black overflow-hidden relative">
+            {/* Starry background */}
             <div className="fixed inset-0 pointer-events-none">
-                <div className="absolute inset-0 bg-gradient-to-br from-primary-900/20 via-dark-950 to-purple-900/20" />
-                <div className="absolute inset-0 dot-pattern opacity-30" />
+                {/* Stars */}
+                {isClient && stars.map((star, i) => (
+                    <div
+                        key={i}
+                        className="absolute rounded-full bg-white animate-twinkle"
+                        style={{
+                            left: `${star.x}%`,
+                            top: `${star.y}%`,
+                            width: `${star.size}px`,
+                            height: `${star.size}px`,
+                            opacity: star.opacity,
+                            animationDuration: `${star.twinkleSpeed}s`,
+                            animationDelay: `${Math.random() * 3}s`,
+                        }}
+                    />
+                ))}
+
+                {/* Blue vignette glow */}
+                <div className="absolute inset-0 bg-gradient-radial from-transparent via-transparent to-black" />
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 via-transparent to-purple-900/20" />
+
+                {/* Cursor glow effect */}
                 {isClient && (
                     <div
-                        className="absolute w-96 h-96 rounded-full blur-3xl opacity-20 transition-all duration-300"
+                        className="absolute w-[600px] h-[600px] rounded-full pointer-events-none transition-all duration-300 ease-out"
                         style={{
-                            background: 'radial-gradient(circle, rgba(14, 165, 233, 0.4), rgba(168, 85, 247, 0.2))',
-                            left: mousePosition.x - 192,
-                            top: mousePosition.y - 192,
+                            background: 'radial-gradient(circle, rgba(59, 130, 246, 0.15), rgba(139, 92, 246, 0.1), transparent 70%)',
+                            left: mousePosition.x - 300,
+                            top: mousePosition.y - 300,
                         }}
                     />
                 )}
+
                 {/* Floating orbs */}
                 <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-primary-500/10 rounded-full blur-3xl animate-float" />
                 <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '2s' }} />
@@ -158,13 +203,6 @@ export default function LandingPage() {
                             </div>
                             <span className="text-xl font-bold gradient-text">AlgoMate</span>
                         </Link>
-
-                        <div className="hidden md:flex items-center gap-8">
-                            <Link href="/practice" className="text-dark-300 hover:text-white transition-colors">Practice</Link>
-                            <Link href="/revision" className="text-dark-300 hover:text-white transition-colors">Revision</Link>
-                            <Link href="/leaderboard" className="text-dark-300 hover:text-white transition-colors">Leaderboard</Link>
-                            <Link href="/friends" className="text-dark-300 hover:text-white transition-colors">Friends</Link>
-                        </div>
 
                         <div className="flex items-center gap-4">
                             <Link
@@ -278,7 +316,7 @@ export default function LandingPage() {
             </section>
 
             {/* Topics Section */}
-            <section className="relative py-24 bg-dark-900/50">
+            <section className="relative py-24">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="grid lg:grid-cols-2 gap-12 items-center">
                         <div>

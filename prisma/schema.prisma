@@ -1,0 +1,118 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  username      String?   @unique
+  password      String?   // Optional for OAuth users
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  progress        Progress[]
+  customQuestions CustomQuestion[]
+  friendsInitiated Friendship[] @relation("FriendshipInitiated")
+  friendsReceived  Friendship[] @relation("FriendshipReceived")
+  accounts        Account[]
+  sessions        Session[]
+}
+
+model Account {
+  id                String  @id @default(auto()) @map("_id") @db.ObjectId
+  userId            String  @db.ObjectId
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.String
+  access_token      String? @db.String
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.String
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  sessionToken String   @unique
+  userId       String   @db.ObjectId
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Progress {
+  id           String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId       String    @db.ObjectId
+  questionId   String
+  status       String    // solved, attempted, unsolved
+  attempts     Int       @default(0)
+  timeSpent    Int       @default(0)
+  confidence   Int       @default(1)
+  bookmarked   Boolean   @default(false)
+  lastReviewed DateTime?
+  nextReview   DateTime?
+  reviewCount  Int       @default(0)
+  easeFactor   Float     @default(2.5) // For spaced repetition
+  interval     Int       @default(0)   // Days until next review
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, questionId])
+}
+
+model CustomQuestion {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String   @db.ObjectId
+  title       String
+  difficulty  String
+  topics      String[] // Array of topics
+  description String
+  link        String?
+  notes       String?
+  solved      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Friendship {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  requesterId String   @db.ObjectId
+  receiverId  String   @db.ObjectId
+  status      String   // pending, accepted, rejected
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  requester User @relation("FriendshipInitiated", fields: [requesterId], references: [id], onDelete: Cascade)
+  receiver  User @relation("FriendshipReceived", fields: [receiverId], references: [id], onDelete: Cascade)
+  
+  @@unique([requesterId, receiverId])
+}

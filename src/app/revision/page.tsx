@@ -1,9 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
-import { questions, DIFFICULTY_COLORS } from '@/data/questions';
-import type { Question, QuestionProgress, RevisionItem } from '@/types';
+import { useState } from 'react';
+import { DIFFICULTY_COLORS } from '@/data/questions';
+import type { Question } from '@/types';
+import { useRevisions } from '@/hooks/useApi';
 
 // Icons
 const HomeIcon = () => (
@@ -156,97 +157,44 @@ interface SolvedQuestion {
 }
 
 export default function RevisionPage() {
-    const [progress, setProgress] = useState<Record<string, QuestionProgress>>({});
     const [timePeriod, setTimePeriod] = useState<TimePeriod>('daily');
-    const [solvedQuestions, setSolvedQuestions] = useState<SolvedQuestion[]>([]);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-    useEffect(() => {
-        const saved = localStorage.getItem('algomate_progress');
-        if (saved) {
-            setProgress(JSON.parse(saved));
+    // Fetch revision questions from API
+    const { data: revisionsData, loading, error, submitReview } = useRevisions(100); // Fetch up to 100 questions
+
+    // Extract questions from API response
+    const allRevisionQuestions = revisionsData?.questions || [];
+
+    // Mark question as reviewed
+    const handleMarkReviewed = async (questionId: string, confidence: number = 3) => {
+        try {
+            const progressItem = allRevisionQuestions.find((q: any) => q.questionId === questionId);
+            if (progressItem) {
+                await submitReview(progressItem.id, confidence);
+            }
+        } catch (error) {
+            console.error('Failed to mark question as reviewed:', error);
         }
-
-        // Generate mock solved questions with dates for demo
-        const now = new Date();
-        const mockSolved: SolvedQuestion[] = questions.slice(0, 15).map((q, index) => {
-            const daysAgo = index * 2; // Spread out over time
-            const solvedDate = new Date(now.getTime() - daysAgo * 24 * 60 * 60 * 1000);
-            const lastReviewed = index % 3 === 0 ? new Date(now.getTime() - (daysAgo - 1) * 24 * 60 * 60 * 1000) : undefined;
-
-            return {
-                question: q,
-                solvedDate,
-                lastReviewed,
-                reviewCount: Math.floor(Math.random() * 5),
-                confidence: (Math.floor(Math.random() * 3) + 1) as 1 | 2 | 3,
-            };
-        });
-        setSolvedQuestions(mockSolved);
-    }, []);
-
-    const handleMarkReviewed = (questionId: string) => {
-        setSolvedQuestions(prev => prev.map(sq =>
-            sq.question.id === questionId
-                ? { ...sq, lastReviewed: new Date(), reviewCount: sq.reviewCount + 1 }
-                : sq
-        ));
-
-        // Update progress
-        const newProgress = {
-            ...progress,
-            [questionId]: {
-                ...progress[questionId],
-                reviewCount: (progress[questionId]?.reviewCount || 0) + 1,
-                lastReviewDate: new Date(),
-            },
-        };
-        setProgress(newProgress);
-        localStorage.setItem('algomate_progress', JSON.stringify(newProgress));
     };
 
-    // Filter questions based on time period
+    //  Filter questions based on time period
     const getFilteredQuestions = () => {
-        const now = new Date();
-
-        return solvedQuestions.filter(sq => {
-            const daysSinceSolved = Math.floor((now.getTime() - sq.solvedDate.getTime()) / (24 * 60 * 60 * 1000));
-
-            switch (timePeriod) {
-                case 'daily':
-                    // Questions solved in the last 1 day - need immediate review
-                    return daysSinceSolved <= 1;
-                case 'weekly':
-                    // Questions solved in the last 7 days
-                    return daysSinceSolved <= 7;
-                case 'monthly':
-                    // Questions solved in the last 30 days
-                    return daysSinceSolved <= 30;
-                case 'all':
-                default:
-                    return true;
-            }
-        });
+        // For now, return all questions since API should only return due questions
+        // Future enhancement: Add time-based filtering if needed
+        return allRevisionQuestions;
     };
 
     const filteredQuestions = getFilteredQuestions();
 
     // Calculate stats for each period
     const getStats = () => {
-        const now = new Date();
-        const daily = solvedQuestions.filter(sq => {
-            const days = Math.floor((now.getTime() - sq.solvedDate.getTime()) / (24 * 60 * 60 * 1000));
-            return days <= 1;
-        }).length;
-        const weekly = solvedQuestions.filter(sq => {
-            const days = Math.floor((now.getTime() - sq.solvedDate.getTime()) / (24 * 60 * 60 * 1000));
-            return days <= 7;
-        }).length;
-        const monthly = solvedQuestions.filter(sq => {
-            const days = Math.floor((now.getTime() - sq.solvedDate.getTime()) / (24 * 60 * 60 * 1000));
-            return days <= 30;
-        }).length;
-        const all = solvedQuestions.length;
+        // Simplify stats - API only returns due questions
+        const all = allRevisionQuestions.length;
+        const reviewed = allRevisionQuestions.filter((q: any) => q.lastReviewed).length;
+        const daily = all; // Simplification
+        const weekly = all;
+        const monthly = all;
 
         return { daily, weekly, monthly, all };
     };

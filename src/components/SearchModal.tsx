@@ -168,7 +168,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
                 <div className="max-h-96 overflow-y-auto">
                     {query && results.length === 0 && (
                         <div className="p-8 text-center text-dark-500">
-                            No results found for "{query}"
+                            No results found for &quot;{query}&quot;
                         </div>
                     )}
 

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import { useFriends } from '@/hooks/useApi';
 
 // Icons
 const HomeIcon = () => (
@@ -153,26 +154,64 @@ const suggestions = [
 export default function FriendsPage() {
     const [search, setSearch] = useState('');
     const [activeTab, setActiveTab] = useState<'friends' | 'requests' | 'discover'>('friends');
-    const [friends, setFriends] = useState(friendsList);
-    const [requests, setRequests] = useState(pendingRequests);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-    const handleAcceptRequest = (id: string) => {
-        const accepted = requests.find(r => r.id === id);
-        if (accepted) {
-            setFriends([...friends, { ...accepted, streak: 0, online: false }]);
-            setRequests(requests.filter(r => r.id !== id));
+    // Fetch friends data from API
+    const { data: friendsData, loading, error, handleRequest } = useFriends();
+
+    const friends = friendsData?.friends || [];
+    const pendingRequests = friendsData?.pendingRequests || [];
+    const sentRequests = friendsData?.sentRequests || [];
+
+    const handleAcceptRequest = async (requestId: string) => {
+        try {
+            await handleRequest(requestId, 'accept');
+        } catch (error) {
+            console.error('Failed to accept friend request:', error);
         }
     };
 
-    const handleRejectRequest = (id: string) => {
-        setRequests(requests.filter(r => r.id !== id));
+    const handleRejectRequest = async (requestId: string) => {
+        try {
+            await handleRequest(requestId, 'reject');
+        } catch (error) {
+            console.error('Failed to reject friend request:', error);
+        }
     };
 
-    const filteredFriends = friends.filter(f =>
-        f.name.toLowerCase().includes(search.toLowerCase()) ||
-        f.username.toLowerCase().includes(search.toLowerCase())
+    const filteredFriends = friends.filter((f: any) =>
+        f.name?.toLowerCase().includes(search.toLowerCase()) ||
+        f.username?.toLowerCase().includes(search.toLowerCase())
     );
+
+    // Loading state
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-dark-950 flex items-center justify-center">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
+                    <p className="text-dark-400">Loading friends...</p>
+                </div>
+            </div>
+        );
+    }
+
+    // Error state
+    if (error) {
+        return (
+            <div className="min-h-screen bg-dark-950 flex items-center justify-center">
+                <div className="text-center max-w-md">
+                    <div className="text-red-500 text-5xl mb-4">⚠️</div>
+                    <h2 className="text-xl font-bold mb-2">Failed to load friends</h2>
+                    <p className="text-dark-400 mb-4">{error}</p>
+                    <button onClick={() => window.location.reload()}
+                        className="px-4 py-2 bg-primary-500 rounded-lg hover:bg-primary-600 transition">
+                        Retry
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-dark-950">
@@ -204,9 +243,9 @@ export default function FriendsPage() {
                     </div>
                     <div className="flex items-center gap-3">
                         <span className="text-dark-400">{friends.length} friends</span>
-                        {requests.length > 0 && (
+                        {pendingRequests.length > 0 && (
                             <span className="bg-red-500/20 text-red-400 px-3 py-1 rounded-full text-sm">
-                                {requests.length} pending
+                                {pendingRequests.length} pending
                             </span>
                         )}
                     </div>
@@ -224,9 +263,9 @@ export default function FriendsPage() {
                                 }`}
                         >
                             {tab}
-                            {tab === 'requests' && requests.length > 0 && (
+                            {tab === 'requests' && pendingRequests.length > 0 && (
                                 <span className="ml-2 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
-                                    {requests.length}
+                                    {pendingRequests.length}
                                 </span>
                             )}
                         </button>
@@ -235,7 +274,6 @@ export default function FriendsPage() {
 
                 {/* Search */}
                 <div className="relative mb-6">
-                    <SearchIcon />
                     <input
                         type="text"
                         placeholder="Search friends by name or username..."
@@ -303,7 +341,7 @@ export default function FriendsPage() {
                             <div className="glass rounded-xl p-12 text-center">
                                 <div className="text-5xl mb-4">👋</div>
                                 <h3 className="text-xl font-semibold mb-2">No pending requests</h3>
-                                <p className="text-dark-400">You're all caught up!</p>
+                                <p className="text-dark-400">You&apos;re all caught up!</p>
                             </div>
                         ) : (
                             requests.map((request) => (

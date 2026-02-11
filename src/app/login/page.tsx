@@ -2,6 +2,8 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import { signIn } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 
 const CodeIcon = () => (
     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -35,16 +37,70 @@ export default function LoginPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [name, setName] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState('');
+    const router = useRouter();
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        // Demo: just redirect to dashboard
-        window.location.href = '/dashboard';
+        setError('');
+        setIsLoading(true);
+
+        try {
+            if (isLogin) {
+                const result = await signIn('credentials', {
+                    redirect: false,
+                    email,
+                    password,
+                });
+
+                if (result?.error) {
+                    setError('Invalid email or password');
+                } else {
+                    router.push('/dashboard');
+                }
+            } else {
+                const res = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, password }),
+                });
+
+                const data = await res.json();
+
+                if (!res.ok) {
+                    throw new Error(data.error || 'Registration failed');
+                }
+
+                // Login after successful registration
+                const result = await signIn('credentials', {
+                    redirect: false,
+                    email,
+                    password,
+                });
+
+                if (result?.error) {
+                    setError('Registration successful, but login failed. Please log in manually.');
+                    setIsLogin(true);
+                } else {
+                    router.push('/dashboard');
+                }
+            }
+        } catch (err: any) {
+            setError(err.message || 'Something went wrong');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
-    const handleGitHubLogin = () => {
-        // Demo: redirect to dashboard
-        window.location.href = '/dashboard';
+    const handleGitHubLogin = async () => {
+        setIsLoading(true);
+        try {
+            await signIn('github', { callbackUrl: '/dashboard' });
+        } catch (error) {
+            console.error('GitHub login error:', error);
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -89,108 +145,135 @@ export default function LoginPage() {
 
             {/* Right Panel - Auth Form */}
             <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
-                <div className="w-full max-w-md">
+                <div className="w-full max-w-md space-y-8">
                     {/* Mobile back button */}
-                    <Link href="/" className="lg:hidden flex items-center gap-2 text-dark-400 hover:text-white mb-8">
+                    <Link href="/" className="lg:hidden flex items-center gap-2 text-dark-400 hover:text-white">
                         <ArrowLeftIcon />
                         Back to home
                     </Link>
 
                     {/* Mobile logo */}
-                    <div className="lg:hidden flex items-center gap-3 mb-8">
+                    <div className="lg:hidden flex items-center gap-3">
                         <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary-500 to-purple-500 flex items-center justify-center">
                             <CodeIcon />
                         </div>
                         <span className="text-xl font-bold gradient-text">AlgoMate</span>
                     </div>
 
-                    <h2 className="text-3xl font-bold mb-2">
-                        {isLogin ? 'Welcome back' : 'Create account'}
-                    </h2>
-                    <p className="text-dark-400 mb-8">
-                        {isLogin
-                            ? 'Sign in to continue your DSA journey'
-                            : 'Start your journey to DSA mastery'}
-                    </p>
-
-                    {/* Social Login */}
-                    <div className="space-y-3 mb-6">
-                        <button
-                            onClick={handleGitHubLogin}
-                            className="w-full flex items-center justify-center gap-3 py-3 bg-dark-800 hover:bg-dark-700 border border-dark-700 rounded-xl font-medium transition-colors"
-                        >
-                            <GitHubIcon />
-                            Continue with GitHub
-                        </button>
-                        <button className="w-full flex items-center justify-center gap-3 py-3 bg-dark-800 hover:bg-dark-700 border border-dark-700 rounded-xl font-medium transition-colors">
-                            <GoogleIcon />
-                            Continue with Google
-                        </button>
+                    <div className="text-center lg:text-left">
+                        <h2 className="text-3xl font-bold text-white mb-2">
+                            {isLogin ? 'Welcome Back' : 'Create Account'}
+                        </h2>
+                        <p className="text-dark-400">
+                            {isLogin
+                                ? 'Enter your details to access your account'
+                                : 'Start your journey to mastering DSA today'}
+                        </p>
                     </div>
 
-                    <div className="flex items-center gap-4 mb-6">
-                        <div className="flex-1 h-px bg-dark-700" />
-                        <span className="text-dark-500 text-sm">or</span>
-                        <div className="flex-1 h-px bg-dark-700" />
-                    </div>
+                    {error && (
+                        <div className="bg-red-500/10 border border-red-500/20 text-red-500 px-4 py-3 rounded-lg text-sm">
+                            {error}
+                        </div>
+                    )}
 
-                    {/* Email Form */}
-                    <form onSubmit={handleSubmit} className="space-y-4">
+                    <form onSubmit={handleSubmit} className="space-y-6">
                         {!isLogin && (
                             <div>
-                                <label className="block text-sm font-medium text-dark-300 mb-2">Name</label>
+                                <label className="block text-sm font-medium text-dark-300 mb-2">
+                                    Full Name
+                                </label>
                                 <input
                                     type="text"
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
+                                    className="w-full bg-dark-900 border border-dark-800 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all"
                                     placeholder="John Doe"
-                                    className="w-full px-4 py-3 bg-dark-800 border border-dark-700 rounded-xl text-white placeholder-dark-500 focus:outline-none focus:border-primary-500 transition-colors"
+                                    required={!isLogin}
                                 />
                             </div>
                         )}
+
                         <div>
-                            <label className="block text-sm font-medium text-dark-300 mb-2">Email</label>
+                            <label className="block text-sm font-medium text-dark-300 mb-2">
+                                Email Address
+                            </label>
                             <input
                                 type="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                placeholder="you@example.com"
-                                className="w-full px-4 py-3 bg-dark-800 border border-dark-700 rounded-xl text-white placeholder-dark-500 focus:outline-none focus:border-primary-500 transition-colors"
+                                className="w-full bg-dark-900 border border-dark-800 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all"
+                                placeholder="name@example.com"
+                                required
                             />
                         </div>
+
                         <div>
-                            <label className="block text-sm font-medium text-dark-300 mb-2">Password</label>
+                            <label className="block text-sm font-medium text-dark-300 mb-2">
+                                Password
+                            </label>
                             <input
                                 type="password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
+                                className="w-full bg-dark-900 border border-dark-800 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all"
                                 placeholder="••••••••"
-                                className="w-full px-4 py-3 bg-dark-800 border border-dark-700 rounded-xl text-white placeholder-dark-500 focus:outline-none focus:border-primary-500 transition-colors"
+                                required
+                                minLength={6}
                             />
                         </div>
 
-                        {isLogin && (
-                            <div className="flex justify-end">
-                                <Link href="/forgot-password" className="text-sm text-primary-400 hover:text-primary-300">
-                                    Forgot password?
-                                </Link>
-                            </div>
-                        )}
-
                         <button
                             type="submit"
-                            className="w-full py-3 bg-gradient-to-r from-primary-500 to-purple-500 hover:from-primary-400 hover:to-purple-400 rounded-xl font-semibold transition-all hover:shadow-glow"
+                            disabled={isLoading}
+                            className="w-full bg-gradient-to-r from-primary-600 to-purple-600 hover:from-primary-500 hover:to-purple-500 text-white font-semibold py-3 rounded-lg transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                         >
-                            {isLogin ? 'Sign In' : 'Create Account'}
+                            {isLoading ? (
+                                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            ) : (
+                                isLogin ? 'Sign In' : 'Create Account'
+                            )}
                         </button>
                     </form>
 
-                    <p className="text-center text-dark-400 mt-6">
-                        {isLogin ? "Don't have an account?" : 'Already have an account?'}
-                        {' '}
+                    <div className="relative">
+                        <div className="absolute inset-0 flex items-center">
+                            <div className="w-full border-t border-dark-800"></div>
+                        </div>
+                        <div className="relative flex justify-center text-sm">
+                            <span className="px-2 bg-dark-950 text-dark-400">Or continue with</span>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
                         <button
-                            onClick={() => setIsLogin(!isLogin)}
-                            className="text-primary-400 hover:text-primary-300 font-medium"
+                            onClick={handleGitHubLogin}
+                            type="button"
+                            disabled={isLoading}
+                            className="flex items-center justify-center gap-2 bg-dark-900 border border-dark-800 hover:bg-dark-800 text-white py-2.5 rounded-lg transition-colors"
+                        >
+                            <GitHubIcon />
+                            <span>GitHub</span>
+                        </button>
+                        <button
+                            type="button"
+                            disabled={isLoading}
+                            className="flex items-center justify-center gap-2 bg-dark-900 border border-dark-800 hover:bg-dark-800 text-white py-2.5 rounded-lg transition-colors opacity-50 cursor-not-allowed"
+                            title="Coming soon"
+                        >
+                            <GoogleIcon />
+                            <span>Google</span>
+                        </button>
+                    </div>
+
+                    <p className="text-center text-dark-400">
+                        {isLogin ? "Don't have an account? " : "Already have an account? "}
+                        <button
+                            onClick={() => {
+                                setIsLogin(!isLogin);
+                                setError('');
+                            }}
+                            className="text-primary-400 hover:text-primary-300 font-medium transition-colors"
                         >
                             {isLogin ? 'Sign up' : 'Sign in'}
                         </button>
