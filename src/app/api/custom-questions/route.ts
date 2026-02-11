@@ -6,19 +6,15 @@ import { prisma } from '@/lib/prisma';
 // GET /api/custom-questions - Get all custom questions for the user
 export async function GET(request: NextRequest) {
     try {
-        // TODO: Re-enable auth after frontend integration testing
-        // const session = await getServerSession(authOptions);
+        const session = await getServerSession(authOptions);
 
-        // if (!session?.user?.email) {
-        //     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        // }
+        if (!session?.user?.email) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
 
-        // const user = await prisma.user.findUnique({
-        //     where: { email: session.user.email },
-        // });
-
-        // For testing, use first user
-        const user = await prisma.user.findFirst();
+        const user = await prisma.user.findUnique({
+            where: { email: session.user.email },
+        });
 
         if (!user) {
             return NextResponse.json({ error: 'User not found' }, { status: 404 });
@@ -39,19 +35,15 @@ export async function GET(request: NextRequest) {
 // POST /api/custom-questions - Create a new custom question
 export async function POST(request: NextRequest) {
     try {
-        // TODO: Re-enable auth after frontend integration testing
-        // const session = await getServerSession(authOptions);
+        const session = await getServerSession(authOptions);
 
-        // if (!session?.user?.email) {
-        //     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        // }
+        if (!session?.user?.email) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
 
-        // const user = await prisma.user.findUnique({
-        //     where: { email: session.user.email },
-        // });
-
-        // For testing, use first user
-        const user = await prisma.user.findFirst();
+        const user = await prisma.user.findUnique({
+            where: { email: session.user.email },
+        });
 
         if (!user) {
             return NextResponse.json({ error: 'User not found' }, { status: 404 });

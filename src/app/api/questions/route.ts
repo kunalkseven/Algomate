@@ -9,16 +9,11 @@ export async function GET(request: NextRequest) {
     try {
         const session = await getServerSession(authOptions);
 
-        if (!session?.user?.email) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
-
-        const user = await prisma.user.findUnique({
-            where: { email: session.user.email },
-        });
-
-        if (!user) {
-            return NextResponse.json({ error: 'User not found' }, { status: 404 });
+        let user = null;
+        if (session?.user?.email) {
+            user = await prisma.user.findUnique({
+                where: { email: session.user.email },
+            });
         }
 
         // Get query parameters
@@ -27,7 +22,7 @@ export async function GET(request: NextRequest) {
         const topic = searchParams.get('topic');
         const status = searchParams.get('status');
 
-        // Get custom questions (only if user exists)
+        // Get custom questions (only if logged in)
         const customQuestions = user ? await prisma.customQuestion.findMany({
             where: { userId: user.id },
             orderBy: { createdAt: 'desc' },
@@ -68,6 +63,11 @@ export async function GET(request: NextRequest) {
                 const questionStatus = progressMap.get(q.id) || 'unsolved';
                 return questionStatus === status.toLowerCase();
             });
+        } else if (status && status !== 'All' && !user) {
+            // Unauthenticated users can only see Unsolved (all of them are effectively unsolved)
+            if (status.toLowerCase() !== 'unsolved') {
+                allQuestions = [];
+            }
         }
 
         return NextResponse.json({ questions: allQuestions });

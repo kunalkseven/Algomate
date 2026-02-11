@@ -1,5 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 
+// Force rebuild of Prisma Client
+
 const globalForPrisma = globalThis as unknown as {
     prisma: PrismaClient | undefined;
 };

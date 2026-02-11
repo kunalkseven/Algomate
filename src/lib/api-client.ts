@@ -74,6 +74,7 @@ class ApiClient {
         status: 'SOLVED' | 'ATTEMPTED' | 'UNSOLVED';
         confidence?: number;
         timeSpent?: number;
+        code?: string;
     }) {
         return this.request('/api/progress', {
             method: 'POST',

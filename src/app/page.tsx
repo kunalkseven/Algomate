@@ -4,57 +4,63 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 
 // Icons as simple SVG components
-const CodeIcon = () => (
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+const CodeIcon = ({ className = "w-6 h-6" }: { className?: string }) => (
+    <svg className={className} width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
     </svg>
 );
 
-const GitHubIcon = () => (
-    <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+const GitHubIcon = ({ className = "w-6 h-6" }: { className?: string }) => (
+    <svg className={className} width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
         <path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd" />
     </svg>
 );
 
-const UsersIcon = () => (
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+const UsersIcon = ({ className = "w-6 h-6" }: { className?: string }) => (
+    <svg className={className} width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
     </svg>
 );
 
-const ChartIcon = () => (
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+const ChartIcon = ({ className = "w-6 h-6" }: { className?: string }) => (
+    <svg className={className} width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
     </svg>
 );
 
-const BrainIcon = () => (
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+const BrainIcon = ({ className = "w-6 h-6" }: { className?: string }) => (
+    <svg className={className} width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
     </svg>
 );
 
-const TrophyIcon = () => (
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+const TrophyIcon = ({ className = "w-6 h-6" }: { className?: string }) => (
+    <svg className={className} width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
     </svg>
 );
 
-const FireIcon = () => (
-    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+const FireIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
+    <svg className={className} width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
         <path d="M12.953 2.641a.5.5 0 00-.906 0c-1.845 4.027-5.047 6.107-5.047 10.359a6 6 0 1012 0c0-4.252-3.202-6.332-5.047-10.359zM12 18a4 4 0 01-4-4c0-2.5 1.5-4 3-6 1.5 2 3 3.5 3 6a4 4 0 01-4 4z" />
     </svg>
 );
 
-const ArrowRightIcon = () => (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+const ArrowRightIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
+    <svg className={className} width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
     </svg>
 );
 
-const CheckIcon = () => (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+const CheckIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
+    <svg className={className} width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+    </svg>
+);
+
+const XIcon = ({ className = "w-6 h-6" }: { className?: string }) => (
+    <svg className={className} width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
     </svg>
 );
 
@@ -126,6 +132,7 @@ export default function LandingPage() {
     const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
     const [isClient, setIsClient] = useState(false);
     const [stars, setStars] = useState<Star[]>([]);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     useEffect(() => {
         setIsClient(true);
@@ -194,30 +201,68 @@ export default function LandingPage() {
             </div>
 
             {/* Navbar */}
-            <nav className="fixed top-0 left-0 right-0 z-50 glass">
+            <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isClient && (window.scrollY > 10 || isMobileMenuOpen) ? 'bg-black/80 backdrop-blur-md border-b border-white/5' : ''}`}>
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center justify-between h-16">
-                        <Link href="/" className="flex items-center gap-2">
-                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-purple-500 flex items-center justify-center">
-                                <CodeIcon />
+                        {/* Logo */}
+                        <Link href="/" className="flex items-center gap-2 group z-50">
+                            <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-purple-500 flex items-center justify-center overflow-hidden group-hover:scale-105 transition-transform duration-300">
+                                <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+                                <CodeIcon className="w-6 h-6" />
                             </div>
-                            <span className="text-xl font-bold gradient-text">AlgoMate</span>
+                            <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400 group-hover:from-primary-400 group-hover:to-purple-400 transition-all duration-300">
+                                AlgoMate
+                            </span>
                         </Link>
 
-                        <div className="flex items-center gap-4">
+                        {/* Desktop Navigation */}
+                        <div className="hidden md:flex items-center gap-6">
+                            <Link href="/practice" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">Practice</Link>
+                            <Link href="/playground" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">Playground</Link>
+                            <div className="h-4 w-px bg-white/10" />
                             <Link
                                 href="/login"
-                                className="px-4 py-2 text-dark-300 hover:text-white transition-colors"
+                                className="text-sm font-medium text-gray-300 hover:text-white transition-colors"
                             >
                                 Login
                             </Link>
                             <Link
-                                href="/dashboard"
-                                className="px-5 py-2.5 bg-gradient-to-r from-primary-500 to-purple-500 rounded-lg font-medium hover:from-primary-400 hover:to-purple-400 transition-all hover:scale-105 hover:shadow-glow"
+                                href="/login?view=signup"
+                                className="px-5 py-2 bg-white text-black text-sm font-semibold rounded-full hover:bg-gray-200 transition-colors shadow-lg shadow-white/5"
                             >
                                 Get Started
                             </Link>
                         </div>
+
+                        {/* Mobile Menu Button */}
+                        <div className="md:hidden z-50">
+                            <button
+                                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                                className="text-gray-400 hover:text-white transition-colors p-2"
+                            >
+                                {isMobileMenuOpen ? <XIcon /> : (
+                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                                    </svg>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Mobile Menu Overlay */}
+                <div className={`fixed inset-0 bg-black/95 backdrop-blur-xl z-40 transition-transform duration-300 md:hidden flex items-center justify-center ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+                    <div className="flex flex-col items-center gap-8 text-lg">
+                        <Link href="/practice" onClick={() => setIsMobileMenuOpen(false)} className="text-gray-300 hover:text-white transition-colors">Practice</Link>
+                        <Link href="/playground" onClick={() => setIsMobileMenuOpen(false)} className="text-gray-300 hover:text-white transition-colors">Playground</Link>
+                        <Link href="/login" onClick={() => setIsMobileMenuOpen(false)} className="text-gray-300 hover:text-white transition-colors">Login</Link>
+                        <Link
+                            href="/login?view=signup"
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            className="px-8 py-3 bg-gradient-to-r from-primary-500 to-purple-500 rounded-xl font-semibold hover:scale-105 transition-transform shadow-glow"
+                        >
+                            Get Started
+                        </Link>
                     </div>
                 </div>
             </nav>
@@ -250,7 +295,7 @@ export default function LandingPage() {
                     {/* CTA buttons */}
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16 animate-slide-up" style={{ animationDelay: '0.3s' }}>
                         <Link
-                            href="/dashboard"
+                            href="/login?view=signup"
                             className="group flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-primary-500 to-purple-500 rounded-xl font-semibold text-lg hover:from-primary-400 hover:to-purple-400 transition-all hover:scale-105 hover:shadow-glow-lg"
                         >
                             Start Practicing Free
@@ -389,7 +434,7 @@ export default function LandingPage() {
                             Join thousands of developers who are improving their problem-solving skills every day. Start your journey today.
                         </p>
                         <Link
-                            href="/dashboard"
+                            href="/login?view=signup"
                             className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-primary-500 to-purple-500 rounded-xl font-semibold text-lg hover:from-primary-400 hover:to-purple-400 transition-all hover:scale-105 hover:shadow-glow-lg"
                         >
                             Start Free Today
@@ -411,7 +456,7 @@ export default function LandingPage() {
                         </div>
                         <div className="flex items-center gap-6 text-dark-400 text-sm">
                             <Link href="/practice" className="hover:text-white transition-colors">Practice</Link>
-                            <Link href="/revision" className="hover:text-white transition-colors">Revision</Link>
+                            <Link href="/playground" className="hover:text-white transition-colors">Playground</Link>
                             <Link href="/leaderboard" className="hover:text-white transition-colors">Leaderboard</Link>
                             <Link href="/friends" className="hover:text-white transition-colors">Friends</Link>
                         </div>

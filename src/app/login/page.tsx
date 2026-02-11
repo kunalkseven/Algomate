@@ -1,9 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { signIn } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 const CodeIcon = () => (
     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -32,8 +32,18 @@ const ArrowLeftIcon = () => (
     </svg>
 );
 
-export default function LoginPage() {
+// Component to handle search params and form logic
+function LoginContent() {
+    const searchParams = useSearchParams();
     const [isLogin, setIsLogin] = useState(true);
+
+    useEffect(() => {
+        const view = searchParams.get('view');
+        if (view === 'signup') {
+            setIsLogin(false);
+        }
+    }, [searchParams]);
+
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [name, setName] = useState('');
@@ -281,5 +291,13 @@ export default function LoginPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function LoginPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen bg-dark-950 flex items-center justify-center text-white">Loading...</div>}>
+            <LoginContent />
+        </Suspense>
     );
 }

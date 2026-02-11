@@ -31,11 +31,15 @@ export async function GET(request: NextRequest) {
         // 2. Are due for review (nextReview is null or <= now)
         const dueQuestions = await prisma.progress.findMany({
             where: {
-                userId: user.id,
-                status: 'solved',
-                OR: [
-                    { nextReview: null },
-                    { nextReview: { lte: now } },
+                AND: [
+                    { userId: user.id },
+                    { status: 'solved' },
+                    {
+                        OR: [
+                            { nextReview: null },
+                            { nextReview: { lte: now } },
+                        ],
+                    },
                 ],
             },
             orderBy: [
@@ -45,9 +49,22 @@ export async function GET(request: NextRequest) {
             take: limit,
         });
 
+        console.log('Revision debug:', {
+            userId: user.id,
+            now: now.toISOString(),
+            found: dueQuestions.length,
+            sample: dueQuestions[0]
+        });
+
         return NextResponse.json({
             questions: dueQuestions,
             totalDue: dueQuestions.length,
+            debug: {
+                userId: user.id,
+                now: now.toISOString(),
+                found: dueQuestions.length,
+                sample: dueQuestions[0]
+            }
         });
     } catch (error) {
         console.error('Error fetching revision questions:', error);
@@ -58,26 +75,18 @@ export async function GET(request: NextRequest) {
 // POST /api/revision - Update review progress
 export async function POST(request: NextRequest) {
     try {
-        // TODO: Re-enable auth after frontend integration testing
-        // const session = await getServerSession(authOptions);
+        const session = await getServerSession(authOptions);
 
-        // if (!session?.user?.email) {
-        //     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        // }
+        if (!session?.user?.email) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
 
-        // const user = await prisma.user.findUnique({
-        //     where: { email: session.user.email },
-        // });
-
-        // if (!user) {
-        //     return NextResponse.json({ error: 'User not found' }, { status: 404 });
-        // }
-
-        // For testing, use first user
-        const user = await prisma.user.findFirst();
+        const user = await prisma.user.findUnique({
+            where: { email: session.user.email },
+        });
 
         if (!user) {
-            return NextResponse.json({ error: 'No users in database' }, { status: 404 });
+            return NextResponse.json({ error: 'User not found' }, { status: 404 });
         }
 
         const body = await request.json();

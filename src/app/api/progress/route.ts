@@ -62,19 +62,15 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'User not found' }, { status: 404 });
         }
 
-        const body = await request.json();
-        const {
-            questionId,
-            status,
-            attempts,
-            timeSpent,
-            confidence,
-            bookmarked,
-        } = body;
 
-        if (!questionId) {
-            return NextResponse.json({ error: 'Question ID is required' }, { status: 400 });
+        const { questionId, status, confidence, timeSpent, code } = await request.json();
+        console.log('Progress API Input:', { questionId, status, confidence, timeSpent, hasCode: !!code });
+
+        if (!questionId || !status) {
+            console.error('Missing required fields:', { questionId, status });
+            return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
         }
+
 
         // Upsert progress
         const progress = await prisma.progress.upsert({
@@ -85,27 +81,43 @@ export async function POST(request: NextRequest) {
                 },
             },
             update: {
-                ...(status !== undefined && { status }),
-                ...(attempts !== undefined && { attempts }),
-                ...(timeSpent !== undefined && { timeSpent }),
+                ...(status !== undefined && { status: status.toLowerCase() }),
                 ...(confidence !== undefined && { confidence }),
-                ...(bookmarked !== undefined && { bookmarked }),
+                ...(timeSpent !== undefined && { timeSpent }),
+                ...(code !== undefined && { code }),
                 updatedAt: new Date(),
+                // Update review schedule if solved
+                ...(status === 'SOLVED' && {
+                    // Simple spaced repetition logic (can be enhanced later)
+                    nextReview: new Date(Date.now() + 24 * 60 * 60 * 1000), // 1 day later
+                    reviewCount: { increment: 1 },
+                }),
             },
             create: {
                 userId: user.id,
                 questionId,
-                status: status || 'unsolved',
-                attempts: attempts || 0,
+                status: status ? status.toLowerCase() : 'unsolved',
+                attempts: 1,
                 timeSpent: timeSpent || 0,
                 confidence: confidence || 1,
-                bookmarked: bookmarked || false,
+                code: code || '',
+                reviewCount: 0,
+                // Set initial review for tomorrow if solved
+                ...(status === 'SOLVED' && {
+                    nextReview: new Date(Date.now() + 24 * 60 * 60 * 1000),
+                }),
             },
         });
 
         return NextResponse.json({ progress });
     } catch (error) {
         console.error('Error updating progress:', error);
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+        // Specifically log Prisma errors if any
+        if ((error as any).code) {
+            console.error('Prisma Error Code:', (error as any).code);
+            console.error('Prisma Error Meta:', (error as any).meta);
+        }
+        return NextResponse.json({ error: 'Internal server error', details: String(error) }, { status: 500 });
     }
 }
+

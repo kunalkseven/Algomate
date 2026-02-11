@@ -96,15 +96,22 @@ export function useProgress(params?: {
     status?: string;
     difficulty?: string;
     topic?: string;
+    enabled?: boolean;
 }) {
     const [data, setData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
     // Serialize params to prevent infinite loops
-    const paramsKey = JSON.stringify(params || {});
+    const { enabled = true, ...apiParams } = params || {};
+    const paramsKey = JSON.stringify(apiParams);
 
     const fetchProgress = useCallback(async () => {
+        if (!enabled) {
+            setLoading(false);
+            return;
+        }
+
         try {
             setLoading(true);
             setError(null);
@@ -126,9 +133,9 @@ export function useProgress(params?: {
         fetchProgress();
     }, [fetchProgress]);
 
-    const updateProgress = async (questionId: string, status: 'SOLVED' | 'ATTEMPTED' | 'UNSOLVED', confidence?: number) => {
+    const updateProgress = async (questionId: string, status: 'SOLVED' | 'ATTEMPTED' | 'UNSOLVED', confidence?: number, code?: string) => {
         try {
-            await apiClient.updateProgress({ questionId, status, confidence });
+            await apiClient.updateProgress({ questionId, status, confidence, code });
             await fetchProgress(); // Refetch after update
         } catch (err) {
             if (err instanceof ApiError) {
@@ -265,7 +272,7 @@ export function useCustomQuestions() {
         try {
             setLoading(true);
             setError(null);
-            const response = await apiClient.getCustomQuestions();
+            const response = await apiClient.getCustomQuestions() as any;
             setData(response.questions);
         } catch (err) {
             if (err instanceof ApiError) {

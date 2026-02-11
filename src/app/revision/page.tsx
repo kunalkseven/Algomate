@@ -92,60 +92,10 @@ const XIcon = () => (
     </svg>
 );
 
-// Sidebar Component
-function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }) {
-    const navItems = [
-        { icon: HomeIcon, label: 'Dashboard', href: '/dashboard' },
-        { icon: CodeIcon, label: 'Practice', href: '/practice' },
-        { icon: FolderIcon, label: 'My Questions', href: '/my-questions' },
-        { icon: BrainIcon, label: 'Revision', href: '/revision', active: true },
-        { icon: TrophyIcon, label: 'Leaderboard', href: '/leaderboard' },
-        { icon: UsersIcon, label: 'Friends', href: '/friends' },
-        { icon: UserIcon, label: 'Profile', href: '/profile' },
-        { icon: SettingsIcon, label: 'Settings', href: '/settings' },
-    ];
-
-    return (
-        <>
-            {isOpen && (
-                <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={onClose} />
-            )}
-            <aside className={`w-64 h-screen fixed left-0 top-0 bg-dark-900 border-r border-dark-800 flex flex-col z-50 transition-transform duration-300 lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-                <div className="flex items-center justify-between px-6 py-5 border-b border-dark-800">
-                    <Link href="/" className="flex items-center gap-2">
-                        <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary-500 to-purple-500 flex items-center justify-center">
-                            <CodeIcon />
-                        </div>
-                        <span className="text-lg font-bold gradient-text">AlgoMate</span>
-                    </Link>
-                    <button onClick={onClose} className="lg:hidden p-1 hover:bg-dark-800 rounded">
-                        <XIcon />
-                    </button>
-                </div>
-                <nav className="flex-1 px-4 py-4">
-                    {navItems.map((item) => (
-                        <Link key={item.label} href={item.href}
-                            className={`flex items-center gap-3 px-4 py-3 rounded-lg mb-1 transition-colors ${item.active ? 'bg-primary-500/10 text-primary-400 border border-primary-500/20' : 'text-dark-400 hover:text-white hover:bg-dark-800'}`}>
-                            <item.icon />
-                            <span className="font-medium">{item.label}</span>
-                        </Link>
-                    ))}
-                </nav>
-                <div className="p-4 border-t border-dark-800">
-                    <div className="flex items-center gap-3 px-2">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-500 to-purple-500 flex items-center justify-center text-sm font-bold">JD</div>
-                        <div className="flex-1">
-                            <div className="font-medium text-sm">John Doe</div>
-                            <div className="text-xs text-dark-500">@johndoe</div>
-                        </div>
-                    </div>
-                </div>
-            </aside>
-        </>
-    );
-}
+import Sidebar from '@/components/Sidebar';
 
 type TimePeriod = 'daily' | 'weekly' | 'monthly' | 'all';
+// ... (keep other code, remove Sidebar definition)
 
 // Extended revision item with solved date
 interface SolvedQuestion {
@@ -185,7 +135,7 @@ export default function RevisionPage() {
         return allRevisionQuestions;
     };
 
-    const filteredQuestions = getFilteredQuestions();
+    const filteredQuestions: SolvedQuestion[] = getFilteredQuestions() as SolvedQuestion[];
 
     // Calculate stats for each period
     const getStats = () => {
@@ -232,7 +182,7 @@ export default function RevisionPage() {
 
     return (
         <div className="min-h-screen bg-dark-950">
-            <Sidebar isOpen={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} />
+            <Sidebar isOpen={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} activeItem="revision" />
 
             <main className="lg:ml-64 p-4 lg:p-8">
                 {/* Mobile Header */}
@@ -299,19 +249,19 @@ export default function RevisionPage() {
                     </div>
                     <div className="glass rounded-xl p-6 text-center">
                         <div className="text-4xl font-bold text-emerald-400 mb-2">
-                            {filteredQuestions.filter(q => q.lastReviewed).length}
+                            {filteredQuestions.filter((q) => q.lastReviewed).length}
                         </div>
                         <div className="text-sm text-dark-400">Reviewed</div>
                     </div>
                     <div className="glass rounded-xl p-6 text-center">
                         <div className="text-4xl font-bold text-yellow-400 mb-2">
-                            {filteredQuestions.filter(q => q.confidence === 2).length}
+                            {filteredQuestions.filter((q) => q.confidence === 2).length}
                         </div>
                         <div className="text-sm text-dark-400">Medium Confidence</div>
                     </div>
                     <div className="glass rounded-xl p-6 text-center">
                         <div className="text-4xl font-bold text-red-400 mb-2">
-                            {filteredQuestions.filter(q => q.confidence === 1).length}
+                            {filteredQuestions.filter((q) => q.confidence === 1).length}
                         </div>
                         <div className="text-sm text-dark-400">Needs Practice</div>
                     </div>
@@ -380,7 +330,7 @@ export default function RevisionPage() {
                                 </div>
 
                                 <div className="flex flex-wrap gap-2 mb-4">
-                                    {sq.question.topics.slice(0, 2).map((topic) => (
+                                    {sq.question.topics.slice(0, 2).map((topic: string) => (
                                         <span key={topic} className="text-xs text-dark-400 bg-dark-800 px-2 py-1 rounded">
                                             {topic}
                                         </span>

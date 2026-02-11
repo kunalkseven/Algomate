@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 import { TOPICS, DIFFICULTY_COLORS } from '@/data/questions';
 import type { Question, Difficulty, Topic, QuestionProgress } from '@/types';
 import { useQuestions, useProgress } from '@/hooks/useApi';
@@ -104,70 +105,10 @@ const XIcon = () => (
     </svg>
 );
 
-// Sidebar Component
-function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }) {
-    const navItems = [
-        { icon: HomeIcon, label: 'Dashboard', href: '/dashboard' },
-        { icon: CodeIcon, label: 'Practice', href: '/practice', active: true },
-        { icon: FolderIcon, label: 'My Questions', href: '/my-questions' },
-        { icon: BrainIcon, label: 'Revision', href: '/revision' },
-        { icon: TrophyIcon, label: 'Leaderboard', href: '/leaderboard' },
-        { icon: UsersIcon, label: 'Friends', href: '/friends' },
-        { icon: UserIcon, label: 'Profile', href: '/profile' },
-        { icon: SettingsIcon, label: 'Settings', href: '/settings' },
-    ];
+import Sidebar from '@/components/Sidebar';
 
-    return (
-        <>
-            {/* Mobile Overlay */}
-            {isOpen && (
-                <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={onClose} />
-            )}
-
-            <aside className={`w-64 h-screen fixed left-0 top-0 bg-dark-900 border-r border-dark-800 flex flex-col z-50 transition-transform duration-300 lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-                <div className="flex items-center justify-between px-6 py-5 border-b border-dark-800">
-                    <Link href="/" className="flex items-center gap-2">
-                        <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary-500 to-purple-500 flex items-center justify-center">
-                            <CodeIcon />
-                        </div>
-                        <span className="text-lg font-bold gradient-text">AlgoMate</span>
-                    </Link>
-                    <button onClick={onClose} className="lg:hidden p-1 hover:bg-dark-800 rounded">
-                        <XIcon />
-                    </button>
-                </div>
-
-                <nav className="flex-1 px-4 py-4">
-                    {navItems.map((item) => (
-                        <Link
-                            key={item.label}
-                            href={item.href}
-                            className={`flex items-center gap-3 px-4 py-3 rounded-lg mb-1 transition-colors ${item.active
-                                ? 'bg-primary-500/10 text-primary-400 border border-primary-500/20'
-                                : 'text-dark-400 hover:text-white hover:bg-dark-800'
-                                }`}
-                        >
-                            <item.icon />
-                            <span className="font-medium">{item.label}</span>
-                        </Link>
-                    ))}
-                </nav>
-
-                <div className="p-4 border-t border-dark-800">
-                    <div className="flex items-center gap-3 px-2">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-500 to-purple-500 flex items-center justify-center text-sm font-bold">
-                            JD
-                        </div>
-                        <div className="flex-1">
-                            <div className="font-medium text-sm">John Doe</div>
-                            <div className="text-xs text-dark-500">@johndoe</div>
-                        </div>
-                    </div>
-                </div>
-            </aside>
-        </>
-    );
-}
+// Icons
+// ... (keep other icons if needed, but remove Sidebar definition)
 
 // Question Card Component
 function QuestionCard({
@@ -243,6 +184,9 @@ function QuestionCard({
 }
 
 export default function PracticePage() {
+    const { data: session, status } = useSession();
+    const isAuthenticated = status === 'authenticated' && !!session?.user;
+
     const [search, setSearch] = useState('');
     const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty | 'All'>('All');
     const [selectedTopic, setSelectedTopic] = useState<Topic | 'All'>('All');
@@ -262,7 +206,7 @@ export default function PracticePage() {
         Object.keys(filters).length > 0 ? filters : undefined
     );
 
-    const { data: progressData, updateProgress } = useProgress();
+    const { data: progressData, updateProgress } = useProgress({ enabled: isAuthenticated });
 
     // Handle bookmark (now uses API)
     const handleBookmark = async (id: string) => {
@@ -298,6 +242,7 @@ export default function PracticePage() {
 
     // Loading state
     if (questionsLoading) {
+        console.log('PracticePage: Loading questions...');
         return (
             <div className="min-h-screen bg-dark-950 flex items-center justify-center">
                 <div className="text-center">
@@ -310,6 +255,7 @@ export default function PracticePage() {
 
     // Error state
     if (questionsError) {
+        console.error('PracticePage: Error loading questions:', questionsError);
         return (
             <div className="min-h-screen bg-dark-950 flex items-center justify-center">
                 <div className="text-center max-w-md">
@@ -327,19 +273,23 @@ export default function PracticePage() {
         );
     }
 
+    console.log('PracticePage: Rendering with', displayQuestions.length, 'questions');
+
     return (
         <div className="min-h-screen bg-dark-950">
-            <Sidebar isOpen={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} />
+            {isAuthenticated && <Sidebar isOpen={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} activeItem="practice" />}
 
-            <main className="lg:ml-64 p-4 lg:p-8">
+            <main className={`${isAuthenticated ? 'lg:ml-64' : ''} p-4 lg:p-8`}>
                 {/* Mobile Header */}
                 <div className="flex items-center justify-between mb-4 lg:hidden">
-                    <button
-                        onClick={() => setMobileMenuOpen(true)}
-                        className="p-2 bg-dark-800 rounded-lg"
-                    >
-                        <MenuIcon />
-                    </button>
+                    {isAuthenticated && (
+                        <button
+                            onClick={() => setMobileMenuOpen(true)}
+                            className="p-2 bg-dark-800 rounded-lg"
+                        >
+                            <MenuIcon />
+                        </button>
+                    )}
                     <Link href="/" className="flex items-center gap-2">
                         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-500 to-purple-500 flex items-center justify-center">
                             <CodeIcon />
@@ -350,9 +300,19 @@ export default function PracticePage() {
                 </div>
 
                 {/* Header */}
-                <div className="mb-8">
-                    <h1 className="text-3xl font-bold mb-2">Practice Problems</h1>
-                    <p className="text-dark-400">Choose a problem and start coding. Track your progress and submit to GitHub.</p>
+                <div className="mb-8 flex items-center justify-between">
+                    <div>
+                        <h1 className="text-3xl font-bold mb-2">Practice Problems</h1>
+                        <p className="text-dark-400">Choose a problem and start coding. Track your progress and submit to GitHub.</p>
+                    </div>
+                    {isAuthenticated && (
+                        <button
+                            onClick={() => import('next-auth/react').then(({ signOut }) => signOut({ callbackUrl: '/login' }))}
+                            className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium text-sm transition-colors"
+                        >
+                            Sign Out (Emergency)
+                        </button>
+                    )}
                 </div>
 
                 {/* Stats */}
@@ -464,7 +424,7 @@ export default function PracticePage() {
                         <QuestionCard
                             key={question.id}
                             question={question}
-                            progress={progressMap.get(question.id)}
+                            progress={progressMap.get(question.id) as QuestionProgress | undefined}
                             onBookmark={handleBookmark}
                         />
                     ))}

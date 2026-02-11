@@ -6,6 +6,8 @@ import { useParams } from 'next/navigation';
 import { getQuestionBySlug, DIFFICULTY_COLORS } from '@/data/questions';
 import Editor from '@monaco-editor/react';
 import type { Language, QuestionProgress } from '@/types';
+import { useProgress } from '@/hooks/useApi';
+import { executeCode } from '@/utils/codeRunner';
 
 // Icons
 const ArrowLeftIcon = () => (
@@ -65,6 +67,9 @@ export default function QuestionPage() {
     const [activeTab, setActiveTab] = useState<'description' | 'solutions' | 'notes'>('description');
     const [notes, setNotes] = useState('');
 
+    // Always call hooks at top level
+    const { updateProgress } = useProgress();
+
     useEffect(() => {
         if (question) {
             setCode(question.starterCode[language]);
@@ -75,6 +80,9 @@ export default function QuestionPage() {
                 if (progress[question.id]) {
                     setIsBookmarked(progress[question.id].bookmarked || false);
                     setNotes(progress[question.id].notes || '');
+                    if (progress[question.id].code) {
+                        setCode(progress[question.id].code);
+                    }
                 }
             }
         }
@@ -96,39 +104,122 @@ export default function QuestionPage() {
     const handleRun = () => {
         setIsRunning(true);
         setOutput('Running...\n');
+
+        // Slight delay to allow UI to update
         setTimeout(() => {
-            setOutput('✓ Test case 1 passed\n✓ Test case 2 passed\n\nAll test cases passed!');
+            // Determine function name from starter code or slug
+            // For Two Sum, it's 'twoSum'. 
+            // We can extract it from the starter code for the current language.
+            // Simple heuristic: match "function x" or "var x ="
+
+            let functionName = '';
+            if (language === 'javascript') {
+                const match = code.match(/function\s+(\w+)/);
+                if (match) functionName = match[1];
+            }
+
+            // Fallback map if regex fails or for other languages (only JS supported for run rn)
+            if (!functionName) {
+                // For now, only JS execution is supported in browser
+                // If python/java, we might need backend execution or just show a message
+                if (language !== 'javascript') {
+                    setOutput('Client-side execution is currently only supported for JavaScript.\nPlease submit to run on server (mocked for now for non-JS).');
+                    setIsRunning(false);
+                    return;
+                }
+            }
+
+            // Using the utility to execute (imported at top level)
+            const results = executeCode(code, functionName, question.examples);
+
+            let outputMsg = '';
+            let allPassed = true;
+
+            results.forEach((res: any, idx: number) => {
+                const icon = res.passed ? '✓' : '✗';
+                outputMsg += `${icon} Test Case ${idx + 1}: ${res.passed ? 'Passed' : 'Failed'}\n`;
+                if (!res.passed) {
+                    allPassed = false;
+                    if (res.error) {
+                        outputMsg += `   Error: ${res.error}\n`;
+                    } else {
+                        outputMsg += `   Input: ${res.input}\n`;
+                        outputMsg += `   Expected: ${res.expectedOutput}\n`;
+                        outputMsg += `   Actual: ${res.actualOutput}\n`;
+                    }
+                }
+            });
+
+            if (allPassed && results.length > 0) {
+                outputMsg += '\nAll test cases passed!';
+            } else if (results.length === 0) {
+                outputMsg += 'No test cases found or language not supported.';
+            }
+
+            setOutput(outputMsg);
             setIsRunning(false);
-        }, 1500);
+        }, 500);
     };
 
-    const handleSubmit = () => {
-        // Save progress
+    const handleSubmit = async () => {
+        try {
+            // Save to API
+            await updateProgress(
+                question.id,
+                'SOLVED',
+                3, // Default confidence (Medium)
+                code // Pass current code
+            );
+
+            // Save progress locally (backup/optimistic)
+            const saved = localStorage.getItem('algomate_progress');
+            const progress = saved ? JSON.parse(saved) : {};
+            progress[question.id] = {
+                ...progress[question.id],
+                questionId: question.id,
+                status: 'solved',
+                solvedAt: new Date().toISOString(),
+                bookmarked: isBookmarked,
+                notes,
+                attempts: (progress[question.id]?.attempts || 0) + 1,
+                confidence: 3,
+                reviewCount: 0,
+                code, // Save code locally too
+            };
+            localStorage.setItem('algomate_progress', JSON.stringify(progress));
+
+            setOutput('✓ Solution submitted successfully!\n\nYour solution has been saved and progress updated.');
+        } catch (error) {
+            console.error('Failed to submit solution:', error);
+            setOutput('❌ Failed to save progress to server. Please try again.');
+        }
+    };
+
+    const handleBookmark = async () => {
+        const newBookmarkState = !isBookmarked;
+        setIsBookmarked(newBookmarkState);
+
+        try {
+            // Update API
+            // Note: API updateProgress expects status, so we need to know current status
+            // For now, we'll optimistically update local storage and try to update API if possible
+            const saved = localStorage.getItem('algomate_progress');
+            const progress = saved ? JSON.parse(saved) : {};
+            const localStatus = progress[question.id]?.status || 'unsolved';
+            // Map local lowercase status to API uppercase status
+            const apiStatus = localStatus === 'solved' ? 'SOLVED' : localStatus === 'attempted' ? 'ATTEMPTED' : 'UNSOLVED';
+
+            await updateProgress(question.id, apiStatus, undefined);
+
+        } catch (error) {
+            console.error('Failed to update bookmark:', error);
+        }
+
         const saved = localStorage.getItem('algomate_progress');
         const progress = saved ? JSON.parse(saved) : {};
         progress[question.id] = {
             ...progress[question.id],
-            questionId: question.id,
-            status: 'solved',
-            solvedAt: new Date().toISOString(),
-            bookmarked: isBookmarked,
-            notes,
-            attempts: (progress[question.id]?.attempts || 0) + 1,
-            confidence: 3,
-            reviewCount: 0,
-        };
-        localStorage.setItem('algomate_progress', JSON.stringify(progress));
-
-        setOutput('✓ Solution submitted successfully!\n\nYour solution has been saved.');
-    };
-
-    const handleBookmark = () => {
-        setIsBookmarked(!isBookmarked);
-        const saved = localStorage.getItem('algomate_progress');
-        const progress = saved ? JSON.parse(saved) : {};
-        progress[question.id] = {
-            ...progress[question.id],
-            bookmarked: !isBookmarked,
+            bookmarked: newBookmarkState,
         };
         localStorage.setItem('algomate_progress', JSON.stringify(progress));
     };
@@ -274,8 +365,50 @@ export default function QuestionPage() {
                         )}
 
                         {activeTab === 'solutions' && (
-                            <div className="text-center text-dark-400 py-16">
-                                <p>Solutions will be available after you solve the problem.</p>
+                            <div className="space-y-8">
+                                {isBookmarked || (localStorage.getItem('algomate_progress') && JSON.parse(localStorage.getItem('algomate_progress') || '{}')[question.id]?.status === 'solved') ? (
+                                    <>
+                                        {/* Official Solution */}
+                                        {question.solution && (
+                                            <div className="space-y-4">
+                                                <h3 className="font-semibold text-lg">Official Solution</h3>
+                                                <div className="relative">
+                                                    <Editor
+                                                        height="300px"
+                                                        defaultLanguage={language}
+                                                        language={language}
+                                                        theme="vs-dark"
+                                                        value={question.solution}
+                                                        options={{
+                                                            readOnly: true,
+                                                            minimap: { enabled: false },
+                                                            scrollBeyondLastLine: false,
+                                                            fontSize: 14,
+                                                        }}
+                                                    />
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* User Solution */}
+                                        <div className="space-y-4">
+                                            <h3 className="font-semibold text-lg">Your Solution</h3>
+                                            <div className="bg-dark-800 rounded-lg p-4 font-mono text-sm overflow-x-auto">
+                                                <pre>{code}</pre>
+                                            </div>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <div className="text-center text-dark-400 py-16">
+                                        <div className="mb-4">
+                                            <svg className="w-12 h-12 mx-auto text-dark-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                            </svg>
+                                        </div>
+                                        <h3 className="text-lg font-medium text-dark-200 mb-2">Solution Locked</h3>
+                                        <p>Solve the problem to compare your solution with others.</p>
+                                    </div>
+                                )}
                             </div>
                         )}
 
