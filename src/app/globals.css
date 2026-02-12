@@ -349,10 +349,13 @@ body {
 
   /* Twinkle animation for stars */
   @keyframes twinkle {
-    0%, 100% {
+
+    0%,
+    100% {
       opacity: 0.3;
       transform: scale(1);
     }
+
     50% {
       opacity: 1;
       transform: scale(1.2);
@@ -378,4 +381,5 @@ body {
 .monaco-editor .margin {
   background: #0f172a !important;
 }
+
 /* Force rebuild */
