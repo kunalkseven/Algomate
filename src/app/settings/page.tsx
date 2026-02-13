@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useTheme } from 'next-themes';
+import { useSession } from 'next-auth/react';
 
 // Icons
 const HomeIcon = () => (
@@ -169,6 +170,16 @@ export default function SettingsPage() {
     const [activeSection, setActiveSection] = useState<'appearance' | 'notifications' | 'privacy' | 'practice' | 'account'>('appearance');
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const { theme, setTheme } = useTheme();
+    const { data: session } = useSession();
+
+    const getUserInitials = () => {
+        if (!session?.user?.name) return 'U';
+        const names = session.user.name.split(' ');
+        if (names.length >= 2) {
+            return names[0][0] + names[1][0];
+        }
+        return session.user.name[0];
+    };
 
     // Load settings from localStorage
     useEffect(() => {
@@ -476,12 +487,12 @@ export default function SettingsPage() {
 
                                     <div className="flex items-center gap-4 mb-6">
                                         <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary-500 to-purple-500 flex items-center justify-center text-2xl font-bold">
-                                            JD
+                                            {getUserInitials()}
                                         </div>
                                         <div>
-                                            <h3 className="text-xl font-semibold">John Doe</h3>
-                                            <p className="text-dark-400">@johndoe</p>
-                                            <p className="text-dark-500 text-sm">john.doe@example.com</p>
+                                            <h3 className="text-xl font-semibold">{session?.user?.name || 'User'}</h3>
+                                            <p className="text-dark-400">@{session?.user?.username || session?.user?.email?.split('@')[0] || 'user'}</p>
+                                            <p className="text-dark-500 text-sm">{session?.user?.email || 'user@example.com'}</p>
                                         </div>
                                     </div>
 
@@ -490,7 +501,7 @@ export default function SettingsPage() {
                                             <label className="block text-sm font-medium text-dark-300 mb-2">Display Name</label>
                                             <input
                                                 type="text"
-                                                defaultValue="John Doe"
+                                                defaultValue={session?.user?.name || ''}
                                                 className="w-full px-4 py-3 bg-dark-800 border border-dark-700 rounded-xl text-white focus:outline-none focus:border-primary-500"
                                             />
                                         </div>
@@ -498,7 +509,7 @@ export default function SettingsPage() {
                                             <label className="block text-sm font-medium text-dark-300 mb-2">Username</label>
                                             <input
                                                 type="text"
-                                                defaultValue="johndoe"
+                                                defaultValue={session?.user?.username || session?.user?.email?.split('@')[0] || ''}
                                                 className="w-full px-4 py-3 bg-dark-800 border border-dark-700 rounded-xl text-white focus:outline-none focus:border-primary-500"
                                             />
                                         </div>

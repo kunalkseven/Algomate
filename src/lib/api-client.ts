@@ -104,8 +104,9 @@ class ApiClient {
         return this.request(`/api/questions/${id}`);
     }
 
-    async getCustomQuestions() {
-        return this.request('/api/custom-questions');
+    async getCustomQuestions(groupId?: string) {
+        const query = groupId ? `?groupId=${groupId}` : '';
+        return this.request(`/api/custom-questions${query}`);
     }
 
     async createCustomQuestion(data: {
@@ -115,6 +116,7 @@ class ApiClient {
         description: string;
         link?: string;
         notes?: string;
+        groupId?: string;
     }) {
         return this.request('/api/custom-questions', {
             method: 'POST',

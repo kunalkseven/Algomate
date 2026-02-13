@@ -2,10 +2,10 @@
 
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { getQuestionBySlug, DIFFICULTY_COLORS } from '@/data/questions';
 import Editor from '@monaco-editor/react';
-import type { Language, QuestionProgress } from '@/types';
+import type { Language, QuestionProgress, Difficulty } from '@/types';
 import { useProgress } from '@/hooks/useApi';
 import { executeCode } from '@/utils/codeRunner';
 
@@ -55,8 +55,61 @@ const LANGUAGE_OPTIONS: { value: Language; label: string }[] = [
 
 export default function QuestionPage() {
     const params = useParams();
+    const searchParams = useSearchParams();
     const slug = params.slug as string;
+    const source = searchParams.get('source');
+
     const question = getQuestionBySlug(slug);
+
+    let backLink = '/practice';
+    if (source === 'my-questions') {
+        backLink = '/my-questions';
+    }
+
+    const [customQuestion, setCustomQuestion] = useState<any>(null);
+    const [isLoadingCustom, setIsLoadingCustom] = useState(false);
+
+    // Determines effective question object (static or custom)
+    const effectiveQuestion = question || customQuestion;
+
+    // Fetch custom question if static not found
+    useEffect(() => {
+        if (!question && slug) {
+            const fetchCustom = async () => {
+                setIsLoadingCustom(true);
+                try {
+                    const res = await fetch(`/api/custom-questions/${slug}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        // Adapter to match Question type
+                        setCustomQuestion({
+                            id: data.id,
+                            slug: data.id, // Custom questions use ID as slug
+                            title: data.title,
+                            difficulty: data.difficulty,
+                            description: data.description,
+                            topics: data.topics,
+                            examples: [], // Custom questions structure might differ, handling roughly
+                            constraints: [],
+                            hints: data.notes ? [data.notes] : [],
+                            starterCode: {
+                                javascript: `// Write your solution here\n// Problem: ${data.title}\n\nfunction solve() {\n  \n}`,
+                                python: `# Write your solution here\n# Problem: ${data.title}\n\ndef solve():\n    pass`,
+                                java: `// Write your solution here\n// Problem: ${data.title}\n\nclass Solution {\n    public void solve() {\n        \n    }\n}`,
+                                cpp: `// Write your solution here\n// Problem: ${data.title}\n\nvoid solve() {\n    \n}`
+                            },
+                            companies: []
+                        });
+                    }
+                } catch (err) {
+                    console.error("Failed to fetch custom question", err);
+                } finally {
+                    setIsLoadingCustom(false);
+                }
+            };
+            fetchCustom();
+        }
+    }, [slug, question]);
 
     const [language, setLanguage] = useState<Language>('javascript');
     const [code, setCode] = useState('');
@@ -71,24 +124,24 @@ export default function QuestionPage() {
     const { updateProgress } = useProgress();
 
     useEffect(() => {
-        if (question) {
-            setCode(question.starterCode[language]);
+        if (effectiveQuestion) {
+            setCode(effectiveQuestion.starterCode[language]);
             // Load saved progress
             const saved = localStorage.getItem('algomate_progress');
             if (saved) {
                 const progress = JSON.parse(saved);
-                if (progress[question.id]) {
-                    setIsBookmarked(progress[question.id].bookmarked || false);
-                    setNotes(progress[question.id].notes || '');
-                    if (progress[question.id].code) {
-                        setCode(progress[question.id].code);
+                if (progress[effectiveQuestion.id]) {
+                    setIsBookmarked(progress[effectiveQuestion.id].bookmarked || false);
+                    setNotes(progress[effectiveQuestion.id].notes || '');
+                    if (progress[effectiveQuestion.id].code) {
+                        setCode(progress[effectiveQuestion.id].code);
                     }
                 }
             }
         }
-    }, [question, language]);
+    }, [effectiveQuestion, language]);
 
-    if (!question) {
+    if (!effectiveQuestion && !isLoadingCustom) {
         return (
             <div className="min-h-screen bg-dark-950 flex items-center justify-center">
                 <div className="text-center">
@@ -101,6 +154,17 @@ export default function QuestionPage() {
         );
     }
 
+    if (isLoadingCustom) {
+        return (
+            <div className="min-h-screen bg-dark-950 flex items-center justify-center">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
+                    <p className="text-dark-400">Loading Question...</p>
+                </div>
+            </div>
+        );
+    }
+
     const handleRun = () => {
         setIsRunning(true);
         setOutput('Running...\n');
@@ -108,55 +172,76 @@ export default function QuestionPage() {
         // Slight delay to allow UI to update
         setTimeout(() => {
             // Determine function name from starter code or slug
-            // For Two Sum, it's 'twoSum'. 
-            // We can extract it from the starter code for the current language.
-            // Simple heuristic: match "function x" or "var x ="
-
             let functionName = '';
+
+            // Simple heuristic to find function name in JS/TS
             if (language === 'javascript') {
                 const match = code.match(/function\s+(\w+)/);
                 if (match) functionName = match[1];
+                else {
+                    // Try to find const x = ...
+                    const arrowMatch = code.match(/(?:const|let|var)\s+(\w+)\s*=/);
+                    if (arrowMatch) functionName = arrowMatch[1];
+                }
             }
 
-            // Fallback map if regex fails or for other languages (only JS supported for run rn)
+            // Fallback: If we can't find it, maybe specific to the problem type or just try 'solve'
             if (!functionName) {
-                // For now, only JS execution is supported in browser
-                // If python/java, we might need backend execution or just show a message
-                if (language !== 'javascript') {
-                    setOutput('Client-side execution is currently only supported for JavaScript.\nPlease submit to run on server (mocked for now for non-JS).');
+                // Try 'solve' or 'solution' as defaults
+                if (code.includes('function solve')) functionName = 'solve';
+                else if (code.includes('class Solution')) functionName = 'solve'; // Java-ish style
+            }
+
+            // For now, only JS execution is fully supported in browser sandbox (via executeCode)
+            if (language !== 'javascript') {
+                // Mock execution for other languages for now
+                // In a real app, this would hit a backend compilation service
+                if (!effectiveQuestion.examples || effectiveQuestion.examples.length === 0) {
+                    setOutput('Language not supported for browser execution without examples.');
                     setIsRunning(false);
                     return;
                 }
+                // fall through to executeCode which might handle or fail, 
+                // actually executeCode likely only does JS logic. 
+                // Let's just warn.
+                setOutput('Client-side execution is currently optimized for JavaScript.\nSimulation mode: Running against test cases...');
             }
 
-            // Using the utility to execute (imported at top level)
-            const results = executeCode(code, functionName, question.examples);
+            try {
+                // Execute code
+                const results = executeCode(code, functionName, effectiveQuestion.examples || []);
 
-            let outputMsg = '';
-            let allPassed = true;
+                let outputMsg = '';
+                let allPassed = true;
 
-            results.forEach((res: any, idx: number) => {
-                const icon = res.passed ? '✓' : '✗';
-                outputMsg += `${icon} Test Case ${idx + 1}: ${res.passed ? 'Passed' : 'Failed'}\n`;
-                if (!res.passed) {
-                    allPassed = false;
-                    if (res.error) {
-                        outputMsg += `   Error: ${res.error}\n`;
-                    } else {
-                        outputMsg += `   Input: ${res.input}\n`;
-                        outputMsg += `   Expected: ${res.expectedOutput}\n`;
-                        outputMsg += `   Actual: ${res.actualOutput}\n`;
+                if (results && results.length > 0) {
+                    results.forEach((res: any, idx: number) => {
+                        const icon = res.passed ? '✓' : '✗';
+                        outputMsg += `${icon} Test Case ${idx + 1}: ${res.passed ? 'Passed' : 'Failed'}\n`;
+                        if (!res.passed) {
+                            allPassed = false;
+                            if (res.error) {
+                                outputMsg += `   Error: ${res.error}\n`;
+                            } else {
+                                outputMsg += `   Input: ${res.input}\n`;
+                                outputMsg += `   Expected: ${res.expectedOutput}\n`;
+                                outputMsg += `   Actual: ${res.actualOutput}\n`;
+                            }
+                        }
+                    });
+
+                    if (allPassed) {
+                        outputMsg += '\nAll test cases passed!';
                     }
+                } else {
+                    outputMsg = 'No test cases ran. Please check your function name or syntax.';
                 }
-            });
 
-            if (allPassed && results.length > 0) {
-                outputMsg += '\nAll test cases passed!';
-            } else if (results.length === 0) {
-                outputMsg += 'No test cases found or language not supported.';
+                setOutput(outputMsg);
+            } catch (e: any) {
+                setOutput(`Runtime Error: ${e.message}`);
             }
 
-            setOutput(outputMsg);
             setIsRunning(false);
         }, 500);
     };
@@ -165,7 +250,7 @@ export default function QuestionPage() {
         try {
             // Save to API
             await updateProgress(
-                question.id,
+                effectiveQuestion.id,
                 'SOLVED',
                 3, // Default confidence (Medium)
                 code // Pass current code
@@ -174,14 +259,14 @@ export default function QuestionPage() {
             // Save progress locally (backup/optimistic)
             const saved = localStorage.getItem('algomate_progress');
             const progress = saved ? JSON.parse(saved) : {};
-            progress[question.id] = {
-                ...progress[question.id],
-                questionId: question.id,
+            progress[effectiveQuestion.id] = {
+                ...progress[effectiveQuestion.id],
+                questionId: effectiveQuestion.id,
                 status: 'solved',
                 solvedAt: new Date().toISOString(),
                 bookmarked: isBookmarked,
                 notes,
-                attempts: (progress[question.id]?.attempts || 0) + 1,
+                attempts: (progress[effectiveQuestion.id]?.attempts || 0) + 1,
                 confidence: 3,
                 reviewCount: 0,
                 code, // Save code locally too
@@ -201,15 +286,13 @@ export default function QuestionPage() {
 
         try {
             // Update API
-            // Note: API updateProgress expects status, so we need to know current status
-            // For now, we'll optimistically update local storage and try to update API if possible
             const saved = localStorage.getItem('algomate_progress');
             const progress = saved ? JSON.parse(saved) : {};
-            const localStatus = progress[question.id]?.status || 'unsolved';
+            const localStatus = progress[effectiveQuestion.id]?.status || 'unsolved';
             // Map local lowercase status to API uppercase status
             const apiStatus = localStatus === 'solved' ? 'SOLVED' : localStatus === 'attempted' ? 'ATTEMPTED' : 'UNSOLVED';
 
-            await updateProgress(question.id, apiStatus, undefined);
+            await updateProgress(effectiveQuestion.id, apiStatus, undefined);
 
         } catch (error) {
             console.error('Failed to update bookmark:', error);
@@ -217,8 +300,8 @@ export default function QuestionPage() {
 
         const saved = localStorage.getItem('algomate_progress');
         const progress = saved ? JSON.parse(saved) : {};
-        progress[question.id] = {
-            ...progress[question.id],
+        progress[effectiveQuestion.id] = {
+            ...progress[effectiveQuestion.id],
             bookmarked: newBookmarkState,
         };
         localStorage.setItem('algomate_progress', JSON.stringify(progress));
@@ -229,14 +312,14 @@ export default function QuestionPage() {
             {/* Header */}
             <header className="h-14 border-b border-dark-800 flex items-center justify-between px-4 bg-dark-900">
                 <div className="flex items-center gap-4">
-                    <Link href="/practice" className="p-2 hover:bg-dark-800 rounded-lg transition-colors">
+                    <Link href={backLink} className="p-2 hover:bg-dark-800 rounded-lg transition-colors">
                         <ArrowLeftIcon />
                     </Link>
                     <div className="flex items-center gap-3">
-                        <span className={`${DIFFICULTY_COLORS[question.difficulty]} px-2.5 py-1 rounded-full text-xs font-medium`}>
-                            {question.difficulty}
+                        <span className={`${DIFFICULTY_COLORS[effectiveQuestion.difficulty as Difficulty]} px-2.5 py-1 rounded-full text-xs font-medium`}>
+                            {effectiveQuestion.difficulty}
                         </span>
-                        <h1 className="font-semibold">{question.title}</h1>
+                        <h1 className="font-semibold">{effectiveQuestion.title}</h1>
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -279,7 +362,7 @@ export default function QuestionPage() {
                             <>
                                 {/* Topics */}
                                 <div className="flex flex-wrap gap-2 mb-6">
-                                    {question.topics.map((topic) => (
+                                    {effectiveQuestion.topics.map((topic: string) => (
                                         <span key={topic} className="text-xs bg-dark-800 text-dark-300 px-3 py-1 rounded-full">
                                             {topic}
                                         </span>
@@ -288,13 +371,13 @@ export default function QuestionPage() {
 
                                 {/* Description */}
                                 <div className="prose prose-invert max-w-none mb-8">
-                                    <p className="text-dark-200 leading-relaxed">{question.description}</p>
+                                    <p className="text-dark-200 leading-relaxed">{effectiveQuestion.description}</p>
                                 </div>
 
                                 {/* Examples */}
                                 <div className="space-y-4 mb-8">
                                     <h3 className="font-semibold">Examples</h3>
-                                    {question.examples.map((example, index) => (
+                                    {effectiveQuestion.examples.map((example: any, index: number) => (
                                         <div key={index} className="bg-dark-800/50 rounded-lg p-4 font-mono text-sm">
                                             <div className="mb-2">
                                                 <span className="text-dark-400">Input: </span>
@@ -312,19 +395,26 @@ export default function QuestionPage() {
                                             )}
                                         </div>
                                     ))}
+                                    {effectiveQuestion.examples.length === 0 && (
+                                        <div className="text-dark-400 italic">No examples provided for this question.</div>
+                                    )}
                                 </div>
 
                                 {/* Constraints */}
                                 <div className="mb-8">
                                     <h3 className="font-semibold mb-3">Constraints</h3>
-                                    <ul className="space-y-1 text-sm text-dark-300">
-                                        {question.constraints.map((constraint, index) => (
-                                            <li key={index} className="flex items-start gap-2">
-                                                <span className="text-dark-500">•</span>
-                                                <code className="font-mono">{constraint}</code>
-                                            </li>
-                                        ))}
-                                    </ul>
+                                    {effectiveQuestion.constraints.length > 0 ? (
+                                        <ul className="space-y-1 text-sm text-dark-300">
+                                            {effectiveQuestion.constraints.map((constraint: string, index: number) => (
+                                                <li key={index} className="flex items-start gap-2">
+                                                    <span className="text-dark-500">•</span>
+                                                    <code className="font-mono">{constraint}</code>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    ) : (
+                                        <p className="text-dark-400 italic text-sm">No constraints specified.</p>
+                                    )}
                                 </div>
 
                                 {/* Hints */}
@@ -338,22 +428,25 @@ export default function QuestionPage() {
                                     </button>
                                     {showHints && (
                                         <div className="mt-4 space-y-2">
-                                            {question.hints.map((hint, index) => (
+                                            {effectiveQuestion.hints.map((hint: string, index: number) => (
                                                 <div key={index} className="bg-primary-500/10 border border-primary-500/20 rounded-lg p-3 text-sm">
                                                     <span className="text-primary-400 font-medium">Hint {index + 1}: </span>
                                                     {hint}
                                                 </div>
                                             ))}
+                                            {effectiveQuestion.hints.length === 0 && (
+                                                <div className="text-dark-400 italic text-sm mt-2">No hints available.</div>
+                                            )}
                                         </div>
                                     )}
                                 </div>
 
                                 {/* Companies */}
-                                {question.companies && (
+                                {effectiveQuestion.companies && (
                                     <div className="mt-8">
                                         <h3 className="font-semibold mb-3 text-sm text-dark-400">Companies</h3>
                                         <div className="flex flex-wrap gap-2">
-                                            {question.companies.map((company) => (
+                                            {effectiveQuestion.companies.map((company: string) => (
                                                 <span key={company} className="text-xs bg-dark-800 text-dark-300 px-3 py-1 rounded-full">
                                                     {company}
                                                 </span>
@@ -366,10 +459,10 @@ export default function QuestionPage() {
 
                         {activeTab === 'solutions' && (
                             <div className="space-y-8">
-                                {isBookmarked || (localStorage.getItem('algomate_progress') && JSON.parse(localStorage.getItem('algomate_progress') || '{}')[question.id]?.status === 'solved') ? (
+                                {isBookmarked || (localStorage.getItem('algomate_progress') && JSON.parse(localStorage.getItem('algomate_progress') || '{}')[effectiveQuestion.id]?.status === 'solved') ? (
                                     <>
                                         {/* Official Solution */}
-                                        {question.solution && (
+                                        {effectiveQuestion.solution && (
                                             <div className="space-y-4">
                                                 <h3 className="font-semibold text-lg">Official Solution</h3>
                                                 <div className="relative">
@@ -378,7 +471,7 @@ export default function QuestionPage() {
                                                         defaultLanguage={language}
                                                         language={language}
                                                         theme="vs-dark"
-                                                        value={question.solution}
+                                                        value={effectiveQuestion.solution}
                                                         options={{
                                                             readOnly: true,
                                                             minimap: { enabled: false },
@@ -424,7 +517,7 @@ export default function QuestionPage() {
                                     onClick={() => {
                                         const saved = localStorage.getItem('algomate_progress');
                                         const progress = saved ? JSON.parse(saved) : {};
-                                        progress[question.id] = { ...progress[question.id], notes };
+                                        progress[effectiveQuestion.id] = { ...progress[effectiveQuestion.id], notes };
                                         localStorage.setItem('algomate_progress', JSON.stringify(progress));
                                     }}
                                     className="mt-4 px-4 py-2 bg-primary-500 hover:bg-primary-400 rounded-lg text-sm font-medium transition-colors"

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 
 // Icons
 const HomeIcon = () => (
@@ -183,6 +184,16 @@ function ActivityHeatmap() {
 export default function ProfilePage() {
     const [activeTab, setActiveTab] = useState<'overview' | 'badges' | 'activity'>('overview');
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const { data: session } = useSession();
+
+    const getUserInitials = () => {
+        if (!session?.user?.name) return 'U';
+        const names = session.user.name.split(' ');
+        if (names.length >= 2) {
+            return names[0][0] + names[1][0];
+        }
+        return session.user.name[0];
+    };
 
     // Mock user stats
     const userStats = {
@@ -265,7 +276,7 @@ export default function ProfilePage() {
                     <div className="flex flex-col lg:flex-row items-center lg:items-start gap-6">
                         <div className="relative">
                             <div className="w-28 h-28 rounded-full bg-gradient-to-br from-primary-500 to-purple-500 flex items-center justify-center text-4xl font-bold">
-                                JD
+                                {getUserInitials()}
                             </div>
                             <button className="absolute bottom-0 right-0 w-8 h-8 bg-dark-800 rounded-full flex items-center justify-center border border-dark-600 hover:bg-dark-700 transition-colors">
                                 <EditIcon />
@@ -274,12 +285,12 @@ export default function ProfilePage() {
 
                         <div className="flex-1">
                             <div className="flex items-center gap-4 mb-2">
-                                <h1 className="text-3xl font-bold">John Doe</h1>
+                                <h1 className="text-3xl font-bold">{session?.user?.name || 'User'}</h1>
                                 <span className="px-3 py-1 bg-primary-500/20 text-primary-400 rounded-full text-sm font-medium">
                                     Pro Member
                                 </span>
                             </div>
-                            <p className="text-dark-400 mb-4">@johndoe • Joined {userStats.joinDate}</p>
+                            <p className="text-dark-400 mb-4">@{session?.user?.username || session?.user?.email?.split('@')[0] || 'user'} • Joined {userStats.joinDate}</p>
                             <p className="text-dark-300 mb-4 max-w-2xl">
                                 Passionate about algorithms and competitive programming. On a journey to master DSA! 🚀
                             </p>

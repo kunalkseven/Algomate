@@ -263,7 +263,7 @@ export function useRevisions(limit = 10) {
 /**
  * Hook for managing custom questions
  */
-export function useCustomQuestions() {
+export function useCustomQuestions(groupId?: string | null) {
     const [data, setData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -272,7 +272,7 @@ export function useCustomQuestions() {
         try {
             setLoading(true);
             setError(null);
-            const response = await apiClient.getCustomQuestions() as any;
+            const response = await apiClient.getCustomQuestions(groupId || undefined) as any;
             setData(response.questions);
         } catch (err) {
             if (err instanceof ApiError) {
@@ -283,7 +283,7 @@ export function useCustomQuestions() {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [groupId]);
 
     useEffect(() => {
         fetchCustomQuestions();

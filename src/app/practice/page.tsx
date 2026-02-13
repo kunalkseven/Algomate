@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { TOPICS, DIFFICULTY_COLORS } from '@/data/questions';
 import type { Question, Difficulty, Topic, QuestionProgress } from '@/types';
-import { useQuestions, useProgress } from '@/hooks/useApi';
+import { useQuestions, useProgress, useCustomQuestions } from '@/hooks/useApi';
 
 // Icons
 const SearchIcon = () => (
@@ -105,6 +105,18 @@ const XIcon = () => (
     </svg>
 );
 
+const GridIcon = () => (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+    </svg>
+);
+
+const ListIcon = () => (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+    </svg>
+);
+
 import Sidebar from '@/components/Sidebar';
 
 // Icons
@@ -114,20 +126,78 @@ import Sidebar from '@/components/Sidebar';
 function QuestionCard({
     question,
     progress,
-    onBookmark
+    onBookmark,
+    viewMode = 'grid'
 }: {
     question: Question;
     progress?: QuestionProgress;
     onBookmark: (id: string) => void;
+    viewMode?: 'grid' | 'list';
 }) {
     const isBookmarked = progress?.bookmarked || false;
     const isSolved = progress?.status === 'solved';
     const isAttempted = progress?.status === 'attempted';
 
+    if (viewMode === 'list') {
+        return (
+            <Link
+                href={`/practice/${question.slug || question.id}`}
+                className="block glass rounded-xl p-4 card-hover group mb-3 flex items-center justify-between"
+            >
+                <div className="flex items-center gap-4 flex-1">
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${isSolved ? 'bg-emerald-500/20 text-emerald-400' :
+                        isAttempted ? 'bg-yellow-500/20 text-yellow-400' :
+                            'bg-dark-700 text-dark-400'
+                        }`}>
+                        {isSolved ? <CheckCircleIcon /> : <span className="text-sm font-mono">{question.id.length > 5 ? '#' : question.id}</span>}
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-3 mb-1">
+                            <h3 className="text-base font-semibold truncate group-hover:text-primary-400 transition-colors">
+                                {question.title}
+                            </h3>
+                            <span className={`${DIFFICULTY_COLORS[question.difficulty]} px-2 py-0.5 rounded-full text-[10px] font-medium uppercase tracking-wider`}>
+                                {question.difficulty}
+                            </span>
+                        </div>
+                        <div className="flex items-center gap-3 text-xs text-dark-400">
+                            <div className="flex gap-2">
+                                {question.topics.slice(0, 3).map((topic) => (
+                                    <span key={topic} className="bg-dark-800 px-1.5 py-0.5 rounded">
+                                        {topic}
+                                    </span>
+                                ))}
+                            </div>
+                            {question.acceptance && (
+                                <span className="flex items-center gap-1">
+                                    <ClockIcon /> {question.acceptance}%
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                <div className="flex items-center pl-4">
+                    <button
+                        onClick={(e) => {
+                            e.preventDefault();
+                            onBookmark(question.id);
+                        }}
+                        className={`p-2 rounded-lg transition-colors ${isBookmarked ? 'text-yellow-400' : 'text-dark-500 hover:text-dark-300'
+                            }`}
+                    >
+                        <BookmarkIcon filled={isBookmarked} />
+                    </button>
+                </div>
+            </Link>
+        );
+    }
+
     return (
         <Link
-            href={`/practice/${question.slug}`}
-            className="block glass rounded-xl p-5 card-hover group"
+            href={`/practice/${question.slug || question.id}`}
+            className="block glass rounded-xl p-5 card-hover group h-full flex flex-col"
         >
             <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-3">
@@ -135,7 +205,7 @@ function QuestionCard({
                         isAttempted ? 'bg-yellow-500/20 text-yellow-400' :
                             'bg-dark-700 text-dark-400'
                         }`}>
-                        {isSolved ? <CheckCircleIcon /> : <span className="text-sm font-mono">{question.id}</span>}
+                        {isSolved ? <CheckCircleIcon /> : <span className="text-sm font-mono">{question.id.length > 5 ? '#' : question.id}</span>}
                     </div>
                     <span className={`${DIFFICULTY_COLORS[question.difficulty]} px-2.5 py-1 rounded-full text-xs font-medium`}>
                         {question.difficulty}
@@ -157,11 +227,11 @@ function QuestionCard({
                 {question.title}
             </h3>
 
-            <p className="text-dark-400 text-sm mb-4 line-clamp-2">
+            <p className="text-dark-400 text-sm mb-4 line-clamp-2 flex-grow">
                 {question.description}
             </p>
 
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between mt-auto">
                 <div className="flex flex-wrap gap-2">
                     {question.topics.slice(0, 2).map((topic) => (
                         <span key={topic} className="text-xs text-dark-400 bg-dark-800 px-2 py-1 rounded">
@@ -187,24 +257,34 @@ export default function PracticePage() {
     const { data: session, status } = useSession();
     const isAuthenticated = status === 'authenticated' && !!session?.user;
 
+    const [activeTab, setActiveTab] = useState<'official' | 'personal' | 'group'>('official');
     const [search, setSearch] = useState('');
     const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty | 'All'>('All');
     const [selectedTopic, setSelectedTopic] = useState<Topic | 'All'>('All');
     const [selectedStatus, setSelectedStatus] = useState<'All' | 'Solved' | 'Attempted' | 'Unsolved'>('All');
     const [showFilters, setShowFilters] = useState(false);
+    const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     // Fetch questions and progress from API
-    // Build filters object without undefined values
+    // Build filters object without undefined values (Only for Official Questions)
     const filters: any = {};
-    if (selectedDifficulty !== 'All') filters.difficulty = selectedDifficulty;
-    if (selectedTopic !== 'All') filters.topic = selectedTopic;
-    if (selectedStatus !== 'All') filters.status = selectedStatus.toLowerCase();
-    if (search) filters.search = search;
+    if (activeTab === 'official') {
+        if (selectedDifficulty !== 'All') filters.difficulty = selectedDifficulty;
+        if (selectedTopic !== 'All') filters.topic = selectedTopic;
+        if (selectedStatus !== 'All') filters.status = selectedStatus.toLowerCase();
+        if (search) filters.search = search;
+    }
 
-    const { data: questionsData, loading: questionsLoading, error: questionsError } = useQuestions(
-        Object.keys(filters).length > 0 ? filters : undefined
+    // Fetch Official Questions
+    const { data: officialData, loading: officialLoading, error: officialError } = useQuestions(
+        activeTab === 'official' && Object.keys(filters).length > 0 ? filters : undefined
     );
+
+    // Fetch Custom Questions (Personal & Group)
+    // We fetch all and filter client-side for now as the API supports separation by groupId but we want to split them bucket-wise
+    // Actually, useCustomQuestions with no args returns ALL (personal + group).
+    const { data: customQuestionsData, loading: customLoading } = useCustomQuestions(null);
 
     const { data: progressData, updateProgress } = useProgress({ enabled: isAuthenticated });
 
@@ -212,36 +292,71 @@ export default function PracticePage() {
     const handleBookmark = async (id: string) => {
         try {
             const currentProgress = progressData?.progress?.find((p: any) => p.questionId === id);
-            const isBookmarked = currentProgress?.bookmarked || false;
+            // const isBookmarked = currentProgress?.bookmarked || false; // unused
 
             await updateProgress(id, currentProgress?.status || 'unsolved', currentProgress?.confidence);
-            // Note: We'd need to add a bookmark-specific endpoint or include it in updateProgress
-            // For now, this is a placeholder
         } catch (error) {
             console.error('Failed to bookmark question:', error);
         }
     };
 
-    // Extract questions and stats
-    const displayQuestions = questionsData?.questions || [];
-    const progressMap = new Map(
+    // Filter Custom Questions
+    const allCustomQuestions = customQuestionsData || [];
+    const personalQuestions = allCustomQuestions.filter((q: any) => !q.groupId);
+    const groupQuestions = allCustomQuestions.filter((q: any) => !!q.groupId);
+
+    // Determine which set of questions to display based on active tab
+    let sourceQuestions = [];
+    if (activeTab === 'official') {
+        sourceQuestions = officialData?.questions || [];
+    } else if (activeTab === 'personal') {
+        sourceQuestions = personalQuestions;
+    } else {
+        sourceQuestions = groupQuestions;
+    }
+
+    const progressMap = new Map<string, any>(
         (progressData?.progress || []).map((p: any) => [p.questionId, p])
     );
 
-    // Filter by search locally (API doesn't support search yet)
-    const filteredQuestions = search
-        ? displayQuestions.filter((q: any) =>
-            q.title.toLowerCase().includes(search.toLowerCase()) ||
-            q.topics.some((t: string) => t.toLowerCase().includes(search.toLowerCase()))
-        )
-        : displayQuestions;
+    // Initial Filter (Search/Topic/Diff/Status) applied Client-Side for Custom tabs
+    // For Official, it's server-side filtered via hook, BUT standard useQuestions might return all if no filters?
+    // Actually useQuestions returns paginated or filtered.
+    // If we are in 'official' tab, 'sourceQuestions' is ALREADY filtered by the API (except for search if API doesn't support it fully yet, but code says verify).
+    // The original code filtered by search locally. Let's keep that logic for consistency or apply it only to custom.
+    // Wait, the original code had:
+    // const filteredQuestions = search ? displayQuestions.filter(...) : displayQuestions;
+    // And useQuestions accepts 'search'.
+    // If useQuestions handles search, we shouldn't filter again?
+    // Looking at original code: `// Filter by search locally (API doesn't support search yet)` -> So we MUST filter locally.
 
-    // Stats
-    const totalSolved = (progressData?.progress || []).filter((p: any) => p.status === 'solved').length;
-    const totalAttempted = (progressData?.progress || []).filter((p: any) => p.status === 'attempted').length;
+    const filteredQuestions = sourceQuestions.filter((q: any) => {
+        // Search Filter
+        if (search) {
+            const matchesSearch = q.title.toLowerCase().includes(search.toLowerCase()) ||
+                q.topics.some((t: string) => t.toLowerCase().includes(search.toLowerCase()));
+            if (!matchesSearch) return false;
+        }
+
+        // For Custom Tabs, we need to apply the other filters locally too since we fetched ALL
+        if (activeTab !== 'official') {
+            if (selectedDifficulty !== 'All' && q.difficulty !== selectedDifficulty) return false;
+            // Topic check - q.topics is array
+            if (selectedTopic !== 'All' && !q.topics.includes(selectedTopic)) return false;
+
+            // Status Check
+            if (selectedStatus !== 'All') {
+                const p = progressMap.get(q.id);
+                const status = p?.status || 'unsolved';
+                if (status !== selectedStatus.toLowerCase()) return false;
+            }
+        }
+
+        return true;
+    });
 
     // Loading state
-    if (questionsLoading) {
+    if ((activeTab === 'official' && officialLoading) || (activeTab !== 'official' && customLoading)) {
         console.log('PracticePage: Loading questions...');
         return (
             <div className="min-h-screen bg-dark-950 flex items-center justify-center">
@@ -254,14 +369,14 @@ export default function PracticePage() {
     }
 
     // Error state
-    if (questionsError) {
-        console.error('PracticePage: Error loading questions:', questionsError);
+    if (activeTab === 'official' && officialError) {
+        console.error('PracticePage: Error loading questions:', officialError);
         return (
             <div className="min-h-screen bg-dark-950 flex items-center justify-center">
                 <div className="text-center max-w-md">
                     <div className="text-red-500 text-5xl mb-4">⚠️</div>
                     <h2 className="text-xl font-bold mb-2">Failed to load problems</h2>
-                    <p className="text-dark-400 mb-4">{questionsError}</p>
+                    <p className="text-dark-400 mb-4">{officialError}</p>
                     <button
                         onClick={() => window.location.reload()}
                         className="px-4 py-2 bg-primary-500 rounded-lg hover:bg-primary-600 transition"
@@ -273,7 +388,7 @@ export default function PracticePage() {
         );
     }
 
-    console.log('PracticePage: Rendering with', displayQuestions.length, 'questions');
+    console.log('PracticePage: Rendering with', sourceQuestions.length, 'questions');
 
     return (
         <div className="min-h-screen bg-dark-950">
@@ -305,32 +420,33 @@ export default function PracticePage() {
                         <h1 className="text-3xl font-bold mb-2">Practice Problems</h1>
                         <p className="text-dark-400">Choose a problem and start coding. Track your progress and submit to GitHub.</p>
                     </div>
-                    {isAuthenticated && (
-                        <button
-                            onClick={() => import('next-auth/react').then(({ signOut }) => signOut({ callbackUrl: '/login' }))}
-                            className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium text-sm transition-colors"
-                        >
-                            Sign Out (Emergency)
-                        </button>
-                    )}
                 </div>
 
                 {/* Stats */}
                 <div className="grid grid-cols-4 gap-4 mb-8">
                     <div className="glass rounded-xl p-4">
-                        <div className="text-2xl font-bold text-primary-400">{displayQuestions.length}</div>
+                        <div className="text-2xl font-bold text-primary-400">{sourceQuestions.length}</div>
                         <div className="text-sm text-dark-400">Total Problems</div>
                     </div>
                     <div className="glass rounded-xl p-4">
-                        <div className="text-2xl font-bold text-emerald-400">{totalSolved}</div>
+                        <div className="text-2xl font-bold text-emerald-400">
+                            {/* Rough estimate for custom questions since progress only tracks BY ID and we might not have all progress loaded if it's paginated?
+                                Actually progress fetched is ALL progress.
+                             */}
+                            {sourceQuestions.filter((q: any) => progressMap.get(q.id)?.status === 'solved' || (q.solved /* for custom q */)).length}
+                        </div>
                         <div className="text-sm text-dark-400">Solved</div>
                     </div>
                     <div className="glass rounded-xl p-4">
-                        <div className="text-2xl font-bold text-yellow-400">{totalAttempted}</div>
+                        <div className="text-2xl font-bold text-yellow-400">
+                            {sourceQuestions.filter((q: any) => progressMap.get(q.id)?.status === 'attempted').length}
+                        </div>
                         <div className="text-sm text-dark-400">Attempted</div>
                     </div>
                     <div className="glass rounded-xl p-4">
-                        <div className="text-2xl font-bold text-dark-300">{displayQuestions.length - totalSolved}</div>
+                        <div className="text-2xl font-bold text-dark-300">
+                            {sourceQuestions.length - sourceQuestions.filter((q: any) => progressMap.get(q.id)?.status === 'solved' || (q.solved)).length}
+                        </div>
                         <div className="text-sm text-dark-400">Remaining</div>
                     </div>
                 </div>
@@ -349,15 +465,35 @@ export default function PracticePage() {
                             <SearchIcon />
                         </div>
                     </div>
-                    <button
-                        onClick={() => setShowFilters(!showFilters)}
-                        className={`flex items-center gap-2 px-4 py-3 bg-dark-800 border border-dark-700 rounded-xl transition-colors ${showFilters ? 'border-primary-500 text-primary-400' : 'hover:border-dark-600'
-                            }`}
-                    >
-                        <FilterIcon />
-                        <span>Filters</span>
-                        <ChevronDownIcon />
-                    </button>
+
+                    <div className="flex gap-2">
+                        <div className="p-1 bg-dark-800 border border-dark-700 rounded-xl flex items-center">
+                            <button
+                                onClick={() => setViewMode('grid')}
+                                className={`p-2 rounded-lg transition-colors ${viewMode === 'grid' ? 'bg-dark-700 text-white' : 'text-dark-400 hover:text-white'}`}
+                                title="Grid View"
+                            >
+                                <GridIcon />
+                            </button>
+                            <button
+                                onClick={() => setViewMode('list')}
+                                className={`p-2 rounded-lg transition-colors ${viewMode === 'list' ? 'bg-dark-700 text-white' : 'text-dark-400 hover:text-white'}`}
+                                title="List View"
+                            >
+                                <ListIcon />
+                            </button>
+                        </div>
+
+                        <button
+                            onClick={() => setShowFilters(!showFilters)}
+                            className={`flex items-center gap-2 px-4 py-3 bg-dark-800 border border-dark-700 rounded-xl transition-colors ${showFilters ? 'border-primary-500 text-primary-400' : 'hover:border-dark-600'
+                                }`}
+                        >
+                            <FilterIcon />
+                            <span>Filters</span>
+                            <ChevronDownIcon />
+                        </button>
+                    </div>
                 </div>
 
                 {/* Filter Options */}
@@ -418,14 +554,15 @@ export default function PracticePage() {
                     </div>
                 )}
 
-                {/* Questions Grid */}
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {/* Questions Grid/List */}
+                <div className={viewMode === 'grid' ? "grid md:grid-cols-2 lg:grid-cols-3 gap-4" : "space-y-3"}>
                     {filteredQuestions.map((question: any) => (
                         <QuestionCard
                             key={question.id}
                             question={question}
                             progress={progressMap.get(question.id) as QuestionProgress | undefined}
                             onBookmark={handleBookmark}
+                            viewMode={viewMode}
                         />
                     ))}
                 </div>

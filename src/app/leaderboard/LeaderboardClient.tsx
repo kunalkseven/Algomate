@@ -55,15 +55,32 @@ interface LeaderboardUser {
 interface LeaderboardClientProps {
     users: LeaderboardUser[];
     currentUserId?: string;
+    friendIds?: string[];
+    userGroups?: { id: string; name: string; memberIds: string[] }[];
 }
 
-export default function LeaderboardClient({ users, currentUserId }: LeaderboardClientProps) {
+export default function LeaderboardClient({ users, currentUserId, friendIds = [], userGroups = [] }: LeaderboardClientProps) {
     const [selectedFriend, setSelectedFriend] = useState<LeaderboardUser | null>(null);
     const [timeRange, setTimeRange] = useState<'all' | 'month' | 'week'>('all'); // Visual only for now
+    const [filterType, setFilterType] = useState<'global' | 'friends' | 'group'>('global');
+    const [selectedGroupId, setSelectedGroupId] = useState<string>('');
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+    // Filter users based on selection
+    const filteredUsers = users.filter(user => {
+        if (filterType === 'global') return true;
+        if (filterType === 'friends') {
+            return user.isCurrentUser || friendIds.includes(user.id);
+        }
+        if (filterType === 'group' && selectedGroupId) {
+            const group = userGroups.find(g => g.id === selectedGroupId);
+            return group ? group.memberIds.includes(user.id) : false;
+        }
+        return true;
+    });
+
     // Sort by score descending
-    const sortedUsers = [...users].sort((a, b) => b.score - a.score);
+    const sortedUsers = [...filteredUsers].sort((a, b) => b.score - a.score);
     const currentUserRank = sortedUsers.findIndex(u => u.isCurrentUser) + 1;
     const currentUser = sortedUsers.find(u => u.isCurrentUser);
 
@@ -99,8 +116,38 @@ export default function LeaderboardClient({ users, currentUserId }: LeaderboardC
                     </div>
                 </div>
 
-                {/* Time Range Filter (Visual Only) */}
-                <div className="flex justify-end mb-6">
+                {/* Filters */}
+                <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+                    <div className="flex items-center bg-dark-800 rounded-lg p-1 border border-white/5">
+                        <button
+                            onClick={() => { setFilterType('global'); setSelectedGroupId(''); }}
+                            className={`px-4 py-2 rounded-md transition-colors ${filterType === 'global' ? 'bg-primary-500/20 text-primary-400' : 'text-gray-400 hover:text-white'}`}
+                        >
+                            Global
+                        </button>
+                        <button
+                            onClick={() => { setFilterType('friends'); setSelectedGroupId(''); }}
+                            className={`px-4 py-2 rounded-md transition-colors ${filterType === 'friends' ? 'bg-primary-500/20 text-primary-400' : 'text-gray-400 hover:text-white'}`}
+                        >
+                            Friends
+                        </button>
+                        {userGroups.length > 0 && (
+                            <select
+                                value={selectedGroupId}
+                                onChange={(e) => {
+                                    setFilterType('group');
+                                    setSelectedGroupId(e.target.value);
+                                }}
+                                className={`bg-transparent border-none text-sm font-medium focus:ring-0 cursor-pointer ${filterType === 'group' ? 'text-primary-400' : 'text-gray-400'}`}
+                            >
+                                <option value="" disabled className="bg-dark-900">Groups</option>
+                                {userGroups.map(g => (
+                                    <option key={g.id} value={g.id} className="bg-dark-900">{g.name}</option>
+                                ))}
+                            </select>
+                        )}
+                    </div>
+
                     <div className="flex gap-2">
                         {['all', 'month', 'week'].map((range) => (
                             <button

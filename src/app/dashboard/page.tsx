@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 import { questions } from '@/data/questions';
 import type { QuestionProgress } from '@/types';
 import SearchModal from '@/components/SearchModal';
@@ -185,6 +186,7 @@ function ActivityHeatmap() {
 export default function DashboardPage() {
     const [showSearch, setShowSearch] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const { data: session } = useSession();
 
     // Fetch stats from API
     const { data: stats, loading, error } = useStats();
@@ -304,7 +306,7 @@ export default function DashboardPage() {
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
                     <div>
-                        <h1 className="text-2xl lg:text-3xl font-bold mb-1">Welcome back, John! 👋</h1>
+                        <h1 className="text-2xl lg:text-3xl font-bold mb-1">Welcome back, {session?.user?.name?.split(' ')[0] || 'User'}! 👋</h1>
                         <p className="text-dark-400">Ready to practice some DSA today?</p>
                     </div>
                     <div className="flex items-center gap-3">

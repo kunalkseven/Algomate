@@ -20,9 +20,45 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: 'User not found' }, { status: 404 });
         }
 
+        const { searchParams } = new URL(request.url);
+        const groupId = searchParams.get('groupId');
+
+        let whereClause: any = { userId: user.id };
+
+        if (groupId) {
+            // Check if user is member of group
+            const membership = await prisma.groupMember.findUnique({
+                where: { groupId_userId: { groupId, userId: user.id } }
+            });
+
+            if (!membership) {
+                return NextResponse.json({ error: 'Not a member of this group' }, { status: 403 });
+            }
+            whereClause = { groupId };
+        } else {
+            // Fetch personal questions AND questions from groups user is in
+            const groupMemberships = await prisma.groupMember.findMany({
+                where: { userId: user.id },
+                select: { groupId: true }
+            });
+            const groupIds = groupMemberships.map(gm => gm.groupId);
+
+            whereClause = {
+                OR: [
+                    { userId: user.id },
+                    { groupId: { in: groupIds } }
+                ]
+            };
+        }
+
         const questions = await prisma.customQuestion.findMany({
-            where: { userId: user.id },
+            where: whereClause,
             orderBy: { createdAt: 'desc' },
+            include: {
+                group: {
+                    select: { name: true }
+                }
+            }
         });
 
         return NextResponse.json({ questions });
@@ -71,6 +107,7 @@ export async function POST(request: NextRequest) {
         const question = await prisma.customQuestion.create({
             data: {
                 userId: user.id,
+                groupId: body.groupId || null, // Optional group ID
                 title,
                 difficulty,
                 topics: Array.isArray(topics) ? topics : [topics],
