@@ -100,26 +100,53 @@ import Sidebar from '@/components/Sidebar';
 // ... (keep other components, remove Sidebar definition)
 
 // Activity Heatmap Component
-function ActivityHeatmap() {
+function ActivityHeatmap({ data }: { data?: Record<string, number> }) {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const days = ['Mon', 'Wed', 'Fri'];
 
-    // Generate sample activity data (52 weeks)
-    const generateActivityData = () => {
-        const data: number[][] = [];
-        for (let week = 0; week < 52; week++) {
-            const weekData: number[] = [];
-            for (let day = 0; day < 7; day++) {
-                weekData.push(Math.random() > 0.5 ? Math.floor(Math.random() * 5) : 0);
-            }
-            data.push(weekData);
-        }
-        return data;
-    };
+    // Generate last 365 days of data
+    // We need to map dates to weeks/days grid.
+    // Logic: Start from 52 weeks ago (approx 1 year). 
+    // Find the Sunday of that week.
 
-    const [activityData] = useState(generateActivityData());
+    // Better approach:
+    // Create an array of 52 weeks.
+    // Each week is an array of 7 days.
+    // Fill backwards from today? Or forwards from 1 year ago?
+    // GitHub style is forwards from 1 year ago to today.
+    // Let's find the start date: Today - 365 days.
+
+    const today = new Date();
+    const startDate = new Date(today);
+    startDate.setDate(today.getDate() - 365);
+
+    // Adjust start date to previous Sunday to align grid
+    const dayOfWeek = startDate.getDay(); // 0 is Sunday
+    startDate.setDate(startDate.getDate() - dayOfWeek);
+
+    const activityGrid: { date: string; count: number }[][] = [];
+
+    let currentDate = new Date(startDate);
+    const endDate = new Date();
+
+    // Generate 53 columns (weeks) to cover full year including partial start/end weeks
+    for (let week = 0; week < 53; week++) {
+        const weekData: { date: string; count: number }[] = [];
+        for (let day = 0; day < 7; day++) {
+            const dateStr = currentDate.toISOString().split('T')[0];
+            // If date is in future relative to "today" (not strictly needed if we stop at today, but grid is fixed size)
+            if (currentDate > endDate && currentDate.toDateString() !== endDate.toDateString()) {
+                weekData.push({ date: dateStr, count: -1 }); // Future placeholder
+            } else {
+                weekData.push({ date: dateStr, count: data?.[dateStr] || 0 });
+            }
+            currentDate.setDate(currentDate.getDate() + 1);
+        }
+        activityGrid.push(weekData);
+    }
 
     const getColor = (count: number) => {
+        if (count === -1) return 'bg-transparent'; // Future dates
         if (count === 0) return 'bg-dark-800';
         if (count === 1) return 'bg-emerald-900';
         if (count === 2) return 'bg-emerald-700';
@@ -130,44 +157,50 @@ function ActivityHeatmap() {
     return (
         <div className="glass rounded-xl p-6">
             <h3 className="font-semibold mb-4">Activity</h3>
-            <div className="overflow-x-auto">
-                <div className="flex gap-1">
+            <div className="overflow-x-auto pb-2">
+                <div className="flex gap-1 min-w-max">
                     {/* Days labels */}
-                    <div className="flex flex-col gap-1 pr-2">
-                        {[0, 1, 2, 3, 4, 5, 6].map((day) => (
-                            <div key={day} className="h-3 text-[10px] text-dark-500 flex items-center">
-                                {day % 2 === 1 ? days[Math.floor(day / 2)] : ''}
+                    <div className="flex flex-col gap-1 pr-2 pt-[16px]"> {/* Offset for month labels if they were above, but here they are below? No, GitHub has days left, months top. */}
+                        {/* Our layout: Months below, Days left. */}
+                        {/* To match GitHub: Months top, Days left. Let's keep current layout (Months below) for simplicity or move them up. */}
+                        {/* The original code had months below. Let's keep it. */}
+                        {[1, 3, 5].map((dayIndex) => (
+                            <div key={dayIndex} className="h-3 text-[10px] text-dark-500 flex items-center h-[12px]"> {/* h-3 is 12px */}
+                                {days[(dayIndex - 1) / 2]}
                             </div>
                         ))}
                     </div>
 
                     {/* Grid */}
-                    <div className="flex gap-1">
-                        {activityData.map((week, weekIdx) => (
-                            <div key={weekIdx} className="flex flex-col gap-1">
-                                {week.map((count, dayIdx) => (
-                                    <div
-                                        key={dayIdx}
-                                        className={`w-3 h-3 rounded-sm ${getColor(count)}`}
-                                        title={`${count} problems solved`}
-                                    />
-                                ))}
-                            </div>
-                        ))}
+                    <div className="flex flex-col">
+                        {/* Grid cells */}
+                        <div className="flex gap-1">
+                            {activityGrid.map((week, weekIdx) => (
+                                <div key={weekIdx} className="flex flex-col gap-1">
+                                    {week.map((day, dayIdx) => (
+                                        <div
+                                            key={day.date}
+                                            className={`w-3 h-3 rounded-sm ${getColor(day.count)}`}
+                                            title={`${day.count === -1 ? 0 : day.count} problems solved on ${day.date}`}
+                                        />
+                                    ))}
+                                </div>
+                            ))}
+                        </div>
+                        {/* Months labels - roughly aligned */}
+                        <div className="flex mt-2 relative h-4 w-full">
+                            {/* Minimal approximation of month positions */}
+                            {months.map((month, idx) => (
+                                <span key={idx} className="text-[10px] text-dark-500 absolute" style={{ left: `${(idx / 12) * 100}%` }}>
+                                    {month}
+                                </span>
+                            ))}
+                        </div>
                     </div>
                 </div>
 
-                {/* Months labels */}
-                <div className="flex mt-2 pl-8">
-                    {months.map((month, idx) => (
-                        <span key={idx} className="text-[10px] text-dark-500" style={{ width: `${100 / 12}%` }}>
-                            {month}
-                        </span>
-                    ))}
-                </div>
-
                 {/* Legend */}
-                <div className="flex items-center gap-2 mt-4 text-xs text-dark-500">
+                <div className="flex items-center gap-2 mt-2 text-xs text-dark-500">
                     <span>Less</span>
                     <div className="flex gap-1">
                         <div className="w-3 h-3 rounded-sm bg-dark-800" />
@@ -366,7 +399,7 @@ export default function DashboardPage() {
                 <div className="grid lg:grid-cols-3 gap-6 mb-8">
                     {/* Activity Heatmap */}
                     <div className="lg:col-span-2">
-                        <ActivityHeatmap />
+                        <ActivityHeatmap data={stats?.activity} />
                     </div>
 
                     {/* Recent Activity */}

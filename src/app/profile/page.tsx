@@ -1,8 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useSession } from 'next-auth/react';
+import { useStats, useProgress } from '@/hooks/useApi';
+import { questions } from '@/data/questions';
 
 // Icons
 const HomeIcon = () => (
@@ -99,28 +101,41 @@ interface Badge {
 import Sidebar from '@/components/Sidebar';
 
 // Activity Heatmap Component
-
-// Activity Heatmap Component
-function ActivityHeatmap() {
+function ActivityHeatmap({ data }: { data?: Record<string, number> }) {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const days = ['Mon', 'Wed', 'Fri'];
 
-    // Generate sample activity data
-    const generateActivityData = () => {
-        const data: number[][] = [];
-        for (let week = 0; week < 52; week++) {
-            const weekData: number[] = [];
-            for (let day = 0; day < 7; day++) {
-                weekData.push(Math.random() > 0.5 ? Math.floor(Math.random() * 5) : 0);
-            }
-            data.push(weekData);
-        }
-        return data;
-    };
+    const today = new Date();
+    const startDate = new Date(today);
+    startDate.setDate(today.getDate() - 365);
 
-    const activityData = generateActivityData();
+    // Adjust start date to previous Sunday to align grid
+    const dayOfWeek = startDate.getDay(); // 0 is Sunday
+    startDate.setDate(startDate.getDate() - dayOfWeek);
+
+    const activityGrid: { date: string; count: number }[][] = [];
+
+    let currentDate = new Date(startDate);
+    const endDate = new Date();
+
+    // Generate 53 columns (weeks) to cover full year including partial start/end weeks
+    for (let week = 0; week < 53; week++) {
+        const weekData: { date: string; count: number }[] = [];
+        for (let day = 0; day < 7; day++) {
+            const dateStr = currentDate.toISOString().split('T')[0];
+            // If date is in future relative to "today" (not strictly needed if we stop at today, but grid is fixed size)
+            if (currentDate > endDate && currentDate.toDateString() !== endDate.toDateString()) {
+                weekData.push({ date: dateStr, count: -1 }); // Future placeholder
+            } else {
+                weekData.push({ date: dateStr, count: data?.[dateStr] || 0 });
+            }
+            currentDate.setDate(currentDate.getDate() + 1);
+        }
+        activityGrid.push(weekData);
+    }
 
     const getColor = (count: number) => {
+        if (count === -1) return 'bg-transparent'; // Future dates
         if (count === 0) return 'bg-dark-800';
         if (count === 1) return 'bg-emerald-900';
         if (count === 2) return 'bg-emerald-700';
@@ -129,44 +144,46 @@ function ActivityHeatmap() {
     };
 
     return (
-        <div className="overflow-x-auto">
-            <div className="flex gap-1">
+        <div className="overflow-x-auto pb-2">
+            <div className="flex gap-1 min-w-max">
                 {/* Days labels */}
-                <div className="flex flex-col gap-1 pr-2">
-                    {[0, 1, 2, 3, 4, 5, 6].map((day) => (
-                        <div key={day} className="h-3 text-xs text-dark-500 flex items-center">
-                            {day % 2 === 1 ? days[Math.floor(day / 2)] : ''}
+                <div className="flex flex-col gap-1 pr-2 pt-[16px]">
+                    {[1, 3, 5].map((dayIndex) => (
+                        <div key={dayIndex} className="h-3 text-[10px] text-dark-500 flex items-center h-[12px]"> {/* h-3 is 12px */}
+                            {days[(dayIndex - 1) / 2]}
                         </div>
                     ))}
                 </div>
 
                 {/* Grid */}
-                <div className="flex gap-1">
-                    {activityData.map((week, weekIdx) => (
-                        <div key={weekIdx} className="flex flex-col gap-1">
-                            {week.map((count, dayIdx) => (
-                                <div
-                                    key={dayIdx}
-                                    className={`w-3 h-3 rounded-sm ${getColor(count)}`}
-                                    title={`${count} problems solved`}
-                                />
-                            ))}
-                        </div>
-                    ))}
+                <div className="flex flex-col">
+                    {/* Grid cells */}
+                    <div className="flex gap-1">
+                        {activityGrid.map((week, weekIdx) => (
+                            <div key={weekIdx} className="flex flex-col gap-1">
+                                {week.map((day, dayIdx) => (
+                                    <div
+                                        key={day.date}
+                                        className={`w-3 h-3 rounded-sm ${getColor(day.count)}`}
+                                        title={`${day.count === -1 ? 0 : day.count} problems solved on ${day.date}`}
+                                    />
+                                ))}
+                            </div>
+                        ))}
+                    </div>
+                    {/* Months labels */}
+                    <div className="flex mt-2 relative h-4 w-full">
+                        {months.map((month, idx) => (
+                            <span key={idx} className="text-[10px] text-dark-500 absolute" style={{ left: `${(idx / 12) * 100}%` }}>
+                                {month}
+                            </span>
+                        ))}
+                    </div>
                 </div>
             </div>
 
-            {/* Months labels */}
-            <div className="flex mt-2 pl-8">
-                {months.map((month, idx) => (
-                    <span key={idx} className="text-xs text-dark-500" style={{ width: `${100 / 12}%` }}>
-                        {month}
-                    </span>
-                ))}
-            </div>
-
             {/* Legend */}
-            <div className="flex items-center gap-2 mt-4 text-xs text-dark-500">
+            <div className="flex items-center gap-2 mt-2 text-xs text-dark-500">
                 <span>Less</span>
                 <div className="flex gap-1">
                     <div className="w-3 h-3 rounded-sm bg-dark-800" />
@@ -186,6 +203,32 @@ export default function ProfilePage() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const { data: session } = useSession();
 
+    // Fetch Stats
+    const { data: stats, loading: statsLoading } = useStats();
+    // Fetch Recent Progress
+    const { data: recentProgressData, loading: progressLoading } = useProgress({ limit: 20 });
+
+    // Process Recent Activity for Feed
+    const groupedActivity: any[] = [];
+    if (recentProgressData?.progress) {
+        const groups: Record<string, string[]> = {};
+        recentProgressData.progress.forEach((p: any) => {
+            const date = new Date(p.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+            if (!groups[date]) groups[date] = [];
+
+            const q = questions.find(q => q.id === p.questionId);
+            const title = q ? q.title : (p.questionId || 'Unknown Problem');
+
+            // Avoid duplicates
+            if (!groups[date].includes(title)) {
+                groups[date].push(title);
+            }
+        });
+        Object.keys(groups).forEach(date => {
+            groupedActivity.push({ date, problems: groups[date], count: groups[date].length });
+        });
+    }
+
     const getUserInitials = () => {
         if (!session?.user?.name) return 'U';
         const names = session.user.name.split(' ');
@@ -195,41 +238,32 @@ export default function ProfilePage() {
         return session.user.name[0];
     };
 
-    // Mock user stats
     const userStats = {
-        totalSolved: 87,
-        easy: 35,
-        medium: 38,
-        hard: 14,
-        streak: 12,
-        maxStreak: 28,
-        rank: 156,
-        score: 2450,
+        totalSolved: stats?.totalSolved || 0,
+        easy: stats?.difficultyProgress?.Easy?.solved || 0,
+        medium: stats?.difficultyProgress?.Medium?.solved || 0,
+        hard: stats?.difficultyProgress?.Hard?.solved || 0,
+        streak: stats?.currentStreak || 0,
+        maxStreak: 0, // Not tracked yet
+        rank: 0, // Not tracked yet
+        score: (stats?.totalSolved || 0) * 10,
         joinDate: 'January 2024',
-        totalSubmissions: 243,
-        acceptanceRate: 72,
+        totalSubmissions: 0, // Not tracked yet
+        acceptanceRate: 100, // Placeholder
     };
 
-    // Mock badges
+    // Badges (Static for now)
     const badges: Badge[] = [
-        { id: '1', name: 'First Steps', description: 'Solve your first problem', icon: '🎯', earned: true, earnedDate: '2024-01-15', rarity: 'common' },
-        { id: '2', name: 'Week Warrior', description: 'Maintain a 7-day streak', icon: '🔥', earned: true, earnedDate: '2024-01-22', rarity: 'common' },
-        { id: '3', name: 'Problem Solver', description: 'Solve 25 problems', icon: '💡', earned: true, earnedDate: '2024-02-01', rarity: 'rare' },
-        { id: '4', name: 'Hard Mode', description: 'Solve 10 hard problems', icon: '⚡', earned: true, earnedDate: '2024-02-10', rarity: 'epic' },
-        { id: '5', name: 'Century Club', description: 'Solve 100 problems', icon: '💯', earned: false, rarity: 'epic' },
-        { id: '6', name: 'Streak Master', description: 'Maintain a 30-day streak', icon: '🏆', earned: false, rarity: 'legendary' },
+        { id: '1', name: 'First Steps', description: 'Solve your first problem', icon: '🎯', earned: userStats.totalSolved > 0, earnedDate: '2024-01-15', rarity: 'common' },
+        { id: '2', name: 'Week Warrior', description: 'Maintain a 7-day streak', icon: '🔥', earned: userStats.streak >= 7, earnedDate: '2024-01-22', rarity: 'common' },
+        { id: '3', name: 'Problem Solver', description: 'Solve 25 problems', icon: '💡', earned: userStats.totalSolved >= 25, earnedDate: '2024-02-01', rarity: 'rare' },
+        { id: '4', name: 'Hard Mode', description: 'Solve 10 hard problems', icon: '⚡', earned: userStats.hard >= 10, earnedDate: '2024-02-10', rarity: 'epic' },
+        { id: '5', name: 'Century Club', description: 'Solve 100 problems', icon: '💯', earned: userStats.totalSolved >= 100, rarity: 'epic' },
+        { id: '6', name: 'Streak Master', description: 'Maintain a 30-day streak', icon: '🏆', earned: userStats.streak >= 30, rarity: 'legendary' },
         { id: '7', name: 'Algorithm Expert', description: 'Master all algorithm types', icon: '🧠', earned: false, rarity: 'legendary' },
-        { id: '8', name: 'Social Butterfly', description: 'Add 10 friends', icon: '🦋', earned: true, earnedDate: '2024-01-28', rarity: 'rare' },
+        { id: '8', name: 'Social Butterfly', description: 'Add 10 friends', icon: '🦋', earned: false, rarity: 'rare' },
     ];
 
-    // Mock recent activity
-    const recentActivity = [
-        { date: 'Today', problems: ['Two Sum', 'Valid Parentheses'], count: 2 },
-        { date: 'Yesterday', problems: ['Binary Search', 'Merge Two Sorted Lists', 'Maximum Subarray'], count: 3 },
-        { date: '2 days ago', problems: ['Reverse Linked List'], count: 1 },
-        { date: '3 days ago', problems: ['Tree Traversal', 'Level Order Traversal'], count: 2 },
-        { date: '4 days ago', problems: ['Coin Change', 'Longest Common Subsequence'], count: 2 },
-    ];
 
     const getRarityColor = (rarity: Badge['rarity']) => {
         switch (rarity) {
@@ -248,6 +282,22 @@ export default function ProfilePage() {
             case 'legendary': return 'border-yellow-500';
         }
     };
+
+    // Calculate Topic Progress
+    const topicProgress = stats?.topicProgress ? Object.entries(stats.topicProgress).map(([topic, data]: [string, any]) => ({
+        topic,
+        solved: data.solved,
+        total: data.total
+    })).sort((a: any, b: any) => b.solved - a.solved).slice(0, 8) : [];
+
+
+    if (statsLoading || progressLoading) {
+        return (
+            <div className="min-h-screen bg-dark-950 flex items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-dark-950">
@@ -302,11 +352,11 @@ export default function ProfilePage() {
                                 </div>
                                 <div className="flex items-center gap-2 text-dark-400">
                                     <TrophyIcon />
-                                    <span>Rank <strong className="text-white">#{userStats.rank}</strong></span>
+                                    <span>Rank <strong className="text-white">#{userStats.rank || '-'}</strong></span>
                                 </div>
                                 <div className="flex items-center gap-2 text-dark-400">
                                     <CalendarIcon />
-                                    <span><strong className="text-white">{userStats.totalSubmissions}</strong> submissions</span>
+                                    <span><strong className="text-white">{userStats.totalSubmissions || '-'}</strong> submissions</span>
                                 </div>
                             </div>
                         </div>
@@ -342,11 +392,11 @@ export default function ProfilePage() {
                         </div>
                     </div>
                     <div className="glass rounded-xl p-5 text-center">
-                        <div className="text-4xl font-bold text-orange-400 mb-1">{userStats.maxStreak}</div>
+                        <div className="text-4xl font-bold text-orange-400 mb-1">{userStats.maxStreak || '-'}</div>
                         <div className="text-sm text-dark-400">Max Streak</div>
                     </div>
                     <div className="glass rounded-xl p-5 text-center">
-                        <div className="text-4xl font-bold text-cyan-400 mb-1">{userStats.acceptanceRate}%</div>
+                        <div className="text-4xl font-bold text-cyan-400 mb-1">{userStats.totalSolved > 0 ? '100%' : '-'}</div>
                         <div className="text-sm text-dark-400">Acceptance Rate</div>
                     </div>
                 </div>
@@ -373,14 +423,14 @@ export default function ProfilePage() {
                         {/* Activity Heatmap */}
                         <div className="lg:col-span-2 glass rounded-xl p-4 lg:p-6">
                             <h3 className="text-lg font-semibold mb-4">Activity</h3>
-                            <ActivityHeatmap />
+                            <ActivityHeatmap data={stats?.activity} />
                         </div>
 
                         {/* Recent Activity */}
                         <div className="glass rounded-xl p-6">
                             <h3 className="text-lg font-semibold mb-4">Recent Activity</h3>
-                            <div className="space-y-4">
-                                {recentActivity.map((activity, idx) => (
+                            <div className="space-y-4 max-h-[400px] overflow-y-auto">
+                                {groupedActivity.length > 0 ? groupedActivity.map((activity, idx) => (
                                     <div key={idx} className="border-b border-dark-800 pb-4 last:border-0 last:pb-0">
                                         <div className="flex items-center justify-between mb-2">
                                             <span className="text-sm text-dark-500">{activity.date}</span>
@@ -389,14 +439,16 @@ export default function ProfilePage() {
                                             </span>
                                         </div>
                                         <div className="space-y-1">
-                                            {activity.problems.map((problem, pidx) => (
+                                            {activity.problems.map((problem: string, pidx: number) => (
                                                 <div key={pidx} className="text-sm text-dark-300 truncate">
                                                     ✓ {problem}
                                                 </div>
                                             ))}
                                         </div>
                                     </div>
-                                ))}
+                                )) : (
+                                    <p className="text-dark-400 text-sm">No recent activity found.</p>
+                                )}
                             </div>
                         </div>
 
@@ -404,16 +456,7 @@ export default function ProfilePage() {
                         <div className="lg:col-span-3 glass rounded-xl p-4 lg:p-6">
                             <h3 className="text-lg font-semibold mb-4">Topic Progress</h3>
                             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                                {[
-                                    { topic: 'Arrays', solved: 18, total: 25 },
-                                    { topic: 'Strings', solved: 12, total: 20 },
-                                    { topic: 'Linked Lists', solved: 8, total: 15 },
-                                    { topic: 'Trees', solved: 14, total: 20 },
-                                    { topic: 'Graphs', solved: 10, total: 18 },
-                                    { topic: 'Dynamic Programming', solved: 15, total: 25 },
-                                    { topic: 'Sorting', solved: 6, total: 10 },
-                                    { topic: 'Hashing', solved: 4, total: 8 },
-                                ].map((item) => (
+                                {topicProgress.map((item: any) => (
                                     <div key={item.topic} className="bg-dark-800/50 rounded-lg p-4">
                                         <div className="flex items-center justify-between mb-2">
                                             <span className="text-sm font-medium">{item.topic}</span>
@@ -422,11 +465,12 @@ export default function ProfilePage() {
                                         <div className="h-2 bg-dark-700 rounded-full overflow-hidden">
                                             <div
                                                 className="h-full bg-gradient-to-r from-primary-500 to-purple-500 rounded-full transition-all"
-                                                style={{ width: `${(item.solved / item.total) * 100}%` }}
+                                                style={{ width: `${item.total > 0 ? (item.solved / item.total) * 100 : 0}%` }}
                                             />
                                         </div>
                                     </div>
                                 ))}
+                                {topicProgress.length === 0 && <p className="text-dark-400 col-span-4">No topic data available yet.</p>}
                             </div>
                         </div>
                     </div>
@@ -480,21 +524,29 @@ export default function ProfilePage() {
                 {activeTab === 'activity' && (
                     <div className="glass rounded-xl p-6">
                         <h3 className="text-lg font-semibold mb-6">Full Activity History</h3>
-                        <ActivityHeatmap />
+                        <ActivityHeatmap data={stats?.activity} />
 
                         <div className="mt-8">
                             <h4 className="font-medium mb-4">Submission History</h4>
                             <div className="space-y-3">
-                                {recentActivity.flatMap((activity) =>
-                                    activity.problems.map((problem, idx) => (
-                                        <div key={`${activity.date}-${idx}`} className="flex items-center justify-between p-4 bg-dark-800/50 rounded-lg">
-                                            <div className="flex items-center gap-3">
-                                                <span className="text-emerald-400">✓</span>
-                                                <span className="font-medium">{problem}</span>
-                                            </div>
+                                {groupedActivity.length > 0 ? groupedActivity.map((activity, idx) => (
+                                    <div key={idx} className="border-b border-dark-800 pb-4 last:border-0 last:pb-0">
+                                        <div className="flex items-center justify-between mb-2">
                                             <span className="text-sm text-dark-500">{activity.date}</span>
+                                            <span className="text-xs bg-primary-500/20 text-primary-400 px-2 py-0.5 rounded-full">
+                                                +{activity.count}
+                                            </span>
                                         </div>
-                                    ))
+                                        <div className="space-y-1">
+                                            {activity.problems.map((problem: string, pidx: number) => (
+                                                <div key={pidx} className="text-sm text-dark-300 truncate">
+                                                    ✓ {problem}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )) : (
+                                    <p className="text-dark-400 text-sm">No recent activity found.</p>
                                 )}
                             </div>
                         </div>
