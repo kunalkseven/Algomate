@@ -113,6 +113,16 @@ function LoginContent() {
         }
     };
 
+    const handleGoogleLogin = async () => {
+        setIsLoading(true);
+        try {
+            await signIn('google', { callbackUrl: '/dashboard' });
+        } catch (error) {
+            console.error('Google login error:', error);
+            setIsLoading(false);
+        }
+    };
+
     return (
         <div className="min-h-screen bg-dark-950 flex">
             {/* Left Panel - Branding */}
@@ -266,10 +276,10 @@ function LoginContent() {
                             <span>GitHub</span>
                         </button>
                         <button
+                            onClick={handleGoogleLogin}
                             type="button"
                             disabled={isLoading}
-                            className="flex items-center justify-center gap-2 bg-dark-900 border border-dark-800 hover:bg-dark-800 text-white py-2.5 rounded-lg transition-colors opacity-50 cursor-not-allowed"
-                            title="Coming soon"
+                            className="flex items-center justify-center gap-2 bg-dark-900 border border-dark-800 hover:bg-dark-800 text-white py-2.5 rounded-lg transition-colors"
                         >
                             <GoogleIcon />
                             <span>Google</span>

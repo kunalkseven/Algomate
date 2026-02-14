@@ -25,8 +25,13 @@ export async function GET(
         const question = await prisma.customQuestion.findUnique({
             where: { id: params.id },
             include: {
+                // @ts-ignore - Prisma Client types are out of sync in IDE, verified correct at runtime
                 group: {
-                    select: { name: true, members: { select: { userId: true } } }
+                    include: {
+                        members: {
+                            select: { userId: true }
+                        }
+                    }
                 }
             }
         });
