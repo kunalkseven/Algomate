@@ -76,7 +76,7 @@ export async function PUT(
         }
 
         const body = await request.json();
-        const { title, difficulty, topics, description, link, notes, solved } = body;
+        const { title, difficulty, topics, description, link, notes, solved, examples, constraints, companies } = body;
 
         const updatedQuestion = await prisma.customQuestion.update({
             where: { id: params.id },
@@ -88,6 +88,9 @@ export async function PUT(
                 ...(link !== undefined && { link }),
                 ...(notes !== undefined && { notes }),
                 ...(solved !== undefined && { solved }),
+                ...(examples !== undefined && { examples }),
+                ...(constraints !== undefined && { constraints: Array.isArray(constraints) ? constraints : [constraints] }),
+                ...(companies !== undefined && { companies: Array.isArray(companies) ? companies : [companies] }),
             },
         });
 

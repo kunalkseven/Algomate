@@ -1,0 +1,16 @@
+curl 'http://localhost:3000/api/custom-questions' \
+  -H 'Accept: */*' \
+  -H 'Accept-Language: en-US,en;q=0.9' \
+  -H 'Connection: keep-alive' \
+  -H 'Content-Type: application/json' \
+  -b 'authjs.csrf-token=305d6730121f656c4f99139b36de443cdd21fcee4e4dfdda11009874d09d6e66%7Cfa5a13b8f698398d9dddb58c7745da03e76d2d8906b9d11ee79e691833a564c8; authjs.callback-url=http%3A%2F%2Flocalhost%3A3000%2Flogin; authjs.session-token=eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2Q0JDLUhTNTEyIiwia2lkIjoiUmdJcmJaS0hTVVRKQnhQdjF1UlFqNlFDQnRjcFBRLXhveFNCSFRRNTFsRTVETkRSN2htMG1GeDFYZmN4STlRc05kUTRZMENqa3pfSmVLVlRub3FReVEifQ..jCcgI7P-Id7rX7TRzGFLvg.yzr26n9yeGsIlsuaAgyXhicPwHUln907t3vgVff-h7lJzy3GX3mOwDAllBkcEauSS1Fehd-FffwM_51zKCEYMIfbWht6JX4H6ljcuH0LozQVOMSJt9177DayrxgJaprswvVedyIW5_494CPhfcIB1FRfrTPoUyBySP4aPbzcCYr2qdNPfteaIEP5mJMfhU_JF838aPt-_EI9PmAzszYoez5soXJzjagUWoAX_GK3PSQB_6DSUkXAwx5tRy9TziDLkYryPV1ADDIgbEeYipfAlXUDBqS2QszNRvAcderRAgJn0oVJnxezr8Z0RpX1I9yL.g9uPU9iU_GuxS_PN_EjN9l9fvLa7hzzCXlcO1gn_CKE; g_state={"i_l":0,"i_ll":1769962378854,"i_b":"bAYG8p2qqqR7stg72OoChrJuXAknR2ZLTKVmVZfKzxQ","i_e":{"enable_itp_optimization":3}}; next-auth.csrf-token=86f6e27b9dd010b40a07a37c38b1cb8ee7bef3fd93e603c7021628003139f556%7C84311d5224904f85ca29836caa2220d52d031679253ad04e2d05e9927c63b849; next-auth.callback-url=http%3A%2F%2Flocalhost%3A3000%2Fdashboard; next-auth.session-token=eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2R0NNIn0..JGgZ7jZuoy4uyeq7.t2K1JWN1LcXGK47nTljzIiSpSXtsgmRyRBskK9yoWtYv3x1z6vEVNH1HPpTknhfzttE1Gki0piTPrIIRZINh3q3YmungTEzu92zqI9quPfgMDcsbmNROAWdfOMYMbnIP1fPqBntts6ZzjHrr7RsmHXWMqRF-tk1EnQVtgOI-Z3p4wHXsA964tXgXFy-psqpQ0XTLDx01iB0Ry-VM2lBubDfkXlVi5lSThU7urMkFp1lsFwSkdQJ8zI9PWcvfUCDCWTJi3jeKeoE9c88OAiuLrUuDX4ZtKer6INUC3oyYexCTcEnrkCxbmVzkKs4DHhhIb95sy5SQtUlJ3ta3Hb45oUj5pkldyinLSGhd3JmQstVCjT3Gtg.Eefhs-YzH1DemP5gmlWHzA' \
+  -H 'Origin: http://localhost:3000' \
+  -H 'Referer: http://localhost:3000/my-questions' \
+  -H 'Sec-Fetch-Dest: empty' \
+  -H 'Sec-Fetch-Mode: cors' \
+  -H 'Sec-Fetch-Site: same-origin' \
+  -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36' \
+  -H 'sec-ch-ua: "Not(A:Brand";v="8", "Chromium";v="144", "Google Chrome";v="144"' \
+  -H 'sec-ch-ua-mobile: ?0' \
+  -H 'sec-ch-ua-platform: "macOS"' \
+  --data-raw $'{"title":"Frequency Counter ","difficulty":"Easy","topics":["Write a function called same","which accepts two arrays. The function should return true if every value in the array has it\'s corresponding value squared in the second array. The frequency of values must be the same."],"description":"Write a function called same, which accepts two arrays.\\nThe function should return true if every value in the array has it\'s corresponding value squared in the second array. The frequency of values must be the same.\\n","link":"","notes":"","examples":"same ([1,2,3],\\n[4,1,9]) // true\\nsame ([1,2,3], [1,9]) // false\\nsame ([1,2,1], [4,4,1]) // false (must be same frequency)","constraints":[],"companies":[],"solved":false,"groupId":null}'

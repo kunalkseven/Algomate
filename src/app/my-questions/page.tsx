@@ -55,6 +55,9 @@ export default function MyQuestionsPage() {
         description: '',
         link: '',
         notes: '',
+        examples: '',
+        constraints: '',
+        companies: '',
         solved: false
     });
 
@@ -104,6 +107,9 @@ export default function MyQuestionsPage() {
             description: '',
             link: '',
             notes: '',
+            examples: '',
+            constraints: '',
+            companies: '',
             solved: false
         });
         setEditingQuestion(null);
@@ -119,6 +125,9 @@ export default function MyQuestionsPage() {
                 description: question.description,
                 link: question.link || '',
                 notes: question.notes || '',
+                examples: question.examples || '',
+                constraints: Array.isArray(question.constraints) ? question.constraints.join('\n') : '',
+                companies: Array.isArray(question.companies) ? question.companies.join(', ') : '',
                 solved: question.solved || false
             });
         } else {
@@ -133,6 +142,8 @@ export default function MyQuestionsPage() {
             const payload = {
                 ...formData,
                 topics: formData.topics.split(',').map(t => t.trim()).filter(Boolean),
+                constraints: formData.constraints.split('\n').map(c => c.trim()).filter(Boolean),
+                companies: formData.companies.split(',').map(c => c.trim()).filter(Boolean),
                 groupId: activeGroup
             };
 
@@ -346,110 +357,145 @@ export default function MyQuestionsPage() {
             {/* Modal */}
             {isModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-                    <div className="bg-[#161616] rounded-2xl w-full max-w-2xl border border-white/10 p-8 shadow-2xl">
-                        <h2 className="text-2xl font-bold mb-6 text-white">
-                            {editingQuestion ? 'Edit Question' : 'Add New Question'}
-                        </h2>
-                        <form onSubmit={handleSubmit} className="space-y-6">
-                            <div className="grid grid-cols-2 gap-6">
+                    <div className="bg-[#161616] rounded-2xl w-full max-w-2xl border border-white/10 shadow-2xl max-h-[90vh] flex flex-col">
+                        <div className="p-8 pb-4 border-b border-white/10 shrink-0">
+                            <h2 className="text-2xl font-bold text-white">
+                                {editingQuestion ? 'Edit Question' : 'Add New Question'}
+                            </h2>
+                        </div>
+                        <div className="p-8 pt-6 overflow-y-auto">
+                            <form onSubmit={handleSubmit} className="space-y-6">
+                                <div className="grid grid-cols-2 gap-6">
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium text-gray-400">Title</label>
+                                        <input
+                                            type="text"
+                                            required
+                                            value={formData.title}
+                                            onChange={e => setFormData({ ...formData, title: e.target.value })}
+                                            className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-purple-500 focus:outline-none focus:border-purple-500"
+                                            placeholder="Two Sum"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium text-gray-400">Difficulty</label>
+                                        <select
+                                            value={formData.difficulty}
+                                            onChange={e => setFormData({ ...formData, difficulty: e.target.value })}
+                                            className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-purple-500 focus:outline-none focus:border-purple-500"
+                                        >
+                                            <option value="Easy">Easy</option>
+                                            <option value="Medium">Medium</option>
+                                            <option value="Hard">Hard</option>
+                                        </select>
+                                    </div>
+                                </div>
+
                                 <div className="space-y-2">
-                                    <label className="text-sm font-medium text-gray-400">Title</label>
+                                    <label className="text-sm font-medium text-gray-400">Topics (comma separated)</label>
                                     <input
                                         type="text"
                                         required
-                                        value={formData.title}
-                                        onChange={e => setFormData({ ...formData, title: e.target.value })}
+                                        value={formData.topics}
+                                        onChange={e => setFormData({ ...formData, topics: e.target.value })}
                                         className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-purple-500 focus:outline-none focus:border-purple-500"
-                                        placeholder="Two Sum"
+                                        placeholder="Arrays, Hash Table"
                                     />
                                 </div>
+
                                 <div className="space-y-2">
-                                    <label className="text-sm font-medium text-gray-400">Difficulty</label>
-                                    <select
-                                        value={formData.difficulty}
-                                        onChange={e => setFormData({ ...formData, difficulty: e.target.value })}
+                                    <label className="text-sm font-medium text-gray-400">Problem Link (Optional)</label>
+                                    <input
+                                        type="url"
+                                        value={formData.link}
+                                        onChange={e => setFormData({ ...formData, link: e.target.value })}
                                         className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-purple-500 focus:outline-none focus:border-purple-500"
-                                    >
-                                        <option value="Easy">Easy</option>
-                                        <option value="Medium">Medium</option>
-                                        <option value="Hard">Hard</option>
-                                    </select>
+                                        placeholder="https://leetcode.com/problems/..."
+                                    />
                                 </div>
-                            </div>
 
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-400">Topics (comma separated)</label>
-                                <input
-                                    type="text"
-                                    required
-                                    value={formData.topics}
-                                    onChange={e => setFormData({ ...formData, topics: e.target.value })}
-                                    className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-purple-500 focus:outline-none focus:border-purple-500"
-                                    placeholder="Arrays, Hash Table"
-                                />
-                            </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium text-gray-400">Description</label>
+                                    <textarea
+                                        required
+                                        value={formData.description}
+                                        onChange={e => setFormData({ ...formData, description: e.target.value })}
+                                        className="w-full h-32 bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-purple-500 focus:outline-none focus:border-purple-500 resize-none"
+                                        placeholder="Problem description..."
+                                    />
+                                </div>
 
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-400">Problem Link (Optional)</label>
-                                <input
-                                    type="url"
-                                    value={formData.link}
-                                    onChange={e => setFormData({ ...formData, link: e.target.value })}
-                                    className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-purple-500 focus:outline-none focus:border-purple-500"
-                                    placeholder="https://leetcode.com/problems/..."
-                                />
-                            </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium text-gray-400">Notes (Optional)</label>
+                                    <textarea
+                                        value={formData.notes}
+                                        onChange={e => setFormData({ ...formData, notes: e.target.value })}
+                                        className="w-full h-20 bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-purple-500 focus:outline-none focus:border-purple-500 resize-none"
+                                        placeholder="Your thoughts, approach, or solution..."
+                                    />
+                                </div>
 
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-400">Description</label>
-                                <textarea
-                                    required
-                                    value={formData.description}
-                                    onChange={e => setFormData({ ...formData, description: e.target.value })}
-                                    className="w-full h-32 bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-purple-500 focus:outline-none focus:border-purple-500 resize-none"
-                                    placeholder="Problem description..."
-                                />
-                            </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium text-gray-400">Examples (Optional)</label>
+                                    <textarea
+                                        value={formData.examples}
+                                        onChange={e => setFormData({ ...formData, examples: e.target.value })}
+                                        className="w-full h-32 bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-purple-500 focus:outline-none focus:border-purple-500 resize-none font-mono text-sm"
+                                        placeholder="Input: nums = [2,7,11,15], target = 9&#10;Output: [0,1]"
+                                    />
+                                </div>
 
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-400">Notes (Optional)</label>
-                                <textarea
-                                    value={formData.notes}
-                                    onChange={e => setFormData({ ...formData, notes: e.target.value })}
-                                    className="w-full h-20 bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-purple-500 focus:outline-none focus:border-purple-500 resize-none"
-                                    placeholder="Your thoughts, approach, or solution..."
-                                />
-                            </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium text-gray-400">Constraints (One per line, Optional)</label>
+                                    <textarea
+                                        value={formData.constraints}
+                                        onChange={e => setFormData({ ...formData, constraints: e.target.value })}
+                                        className="w-full h-32 bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-purple-500 focus:outline-none focus:border-purple-500 resize-none font-mono text-sm"
+                                        placeholder="2 <= nums.length <= 10^4&#10;-10^9 <= nums[i] <= 10^9"
+                                    />
+                                </div>
 
-                            <div className="flex items-center gap-3">
-                                <input
-                                    type="checkbox"
-                                    id="solved"
-                                    checked={formData.solved}
-                                    onChange={e => setFormData({ ...formData, solved: e.target.checked })}
-                                    className="w-5 h-5 rounded border-gray-600 text-purple-600 focus:ring-purple-500 bg-gray-700"
-                                />
-                                <label htmlFor="solved" className="text-sm font-medium text-gray-400 select-none cursor-pointer">
-                                    Mark as Solved
-                                </label>
-                            </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium text-gray-400">Companies (Comma separated, Optional)</label>
+                                    <input
+                                        type="text"
+                                        value={formData.companies}
+                                        onChange={e => setFormData({ ...formData, companies: e.target.value })}
+                                        className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-purple-500 focus:outline-none focus:border-purple-500"
+                                        placeholder="Google, Facebook, Amazon"
+                                    />
+                                </div>
 
-                            <div className="flex justify-end gap-4 pt-4">
-                                <button
-                                    type="button"
-                                    onClick={() => setIsModalOpen(false)}
-                                    className="px-6 py-2.5 rounded-lg border border-white/10 text-gray-300 hover:bg-white/5 transition-colors font-medium"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="px-6 py-2.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white font-medium shadow-lg shadow-purple-500/20 transition-all hover:scale-[1.02]"
-                                >
-                                    {editingQuestion ? 'Update Question' : 'Create Question'}
-                                </button>
-                            </div>
-                        </form>
+                                <div className="flex items-center gap-3">
+                                    <input
+                                        type="checkbox"
+                                        id="solved"
+                                        checked={formData.solved}
+                                        onChange={e => setFormData({ ...formData, solved: e.target.checked })}
+                                        className="w-5 h-5 rounded border-gray-600 text-purple-600 focus:ring-purple-500 bg-gray-700"
+                                    />
+                                    <label htmlFor="solved" className="text-sm font-medium text-gray-400 select-none cursor-pointer">
+                                        Mark as Solved
+                                    </label>
+                                </div>
+
+                                <div className="flex justify-end gap-4 pt-4">
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsModalOpen(false)}
+                                        className="px-6 py-2.5 rounded-lg border border-white/10 text-gray-300 hover:bg-white/5 transition-colors font-medium"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        className="px-6 py-2.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white font-medium shadow-lg shadow-purple-500/20 transition-all hover:scale-[1.02]"
+                                    >
+                                        {editingQuestion ? 'Update Question' : 'Create Question'}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
                 </div>
             )}

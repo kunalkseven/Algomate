@@ -86,7 +86,8 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json();
-        const { title, difficulty, topics, description, link, notes } = body;
+        console.log('POST Question Body:', body);
+        const { title, difficulty, topics, description, link, notes, examples, constraints, companies } = body;
 
         // Validation
         if (!title || !difficulty || !topics || !description) {
@@ -114,12 +115,15 @@ export async function POST(request: NextRequest) {
                 description,
                 link: link || null,
                 notes: notes || null,
+                examples: body.examples || null,
+                constraints: body.constraints || [],
+                companies: body.companies || [],
             },
         });
 
         return NextResponse.json({ question }, { status: 201 });
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error creating custom question:', error);
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+        return NextResponse.json({ error: error.message || 'Internal server error', details: String(error) }, { status: 500 });
     }
 }

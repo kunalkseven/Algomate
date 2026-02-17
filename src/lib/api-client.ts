@@ -116,6 +116,9 @@ class ApiClient {
         description: string;
         link?: string;
         notes?: string;
+        examples?: string;
+        constraints?: string[];
+        companies?: string[];
         groupId?: string;
     }) {
         return this.request('/api/custom-questions', {
@@ -131,16 +134,19 @@ class ApiClient {
         description: string;
         link?: string;
         notes?: string;
+        examples?: string;
+        constraints?: string[];
+        companies?: string[];
         solved?: boolean;
     }>) {
-        return this.request(`/api/custom-questions/${id}`, {
+        return this.request(`/api/questions/${id}`, {
             method: 'PUT',
             body: data,
         });
     }
 
     async deleteCustomQuestion(id: string) {
-        return this.request(`/api/custom-questions/${id}`, {
+        return this.request(`/api/questions/${id}`, {
             method: 'DELETE',
         });
     }
